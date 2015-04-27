@@ -1,14 +1,22 @@
+##### stmGUI ####
+#
+# ui for running stm in Shiny
+#
+# author: @dzangri
+#
+# **TODO**: separate required params from optional ones
+
 library(markdown)
 library(stm)
 
 shinyUI(navbarPage("stm",
   
-  # file upload tab
+  ##### Data Input #####
   tabPanel("Data",
     titlePanel("File Upload"),
     sidebarLayout(
       sidebarPanel(
-        fileInput('datafile', 'Choose File'),
+        fileInput('upDatafile', 'Choose File'),
         tags$hr(),
         h6(paste("If your data is a csv or tsv, select the",
           "correct settings below, hit Submit, and a DataTable will",
@@ -34,10 +42,12 @@ shinyUI(navbarPage("stm",
       )
     )
   ),
+  ##### Processing #####
   tabPanel("Processing",
     titlePanel("Process and Prep Documents"),
     fluidPage(
       fluidRow(
+        ##### Text Processor #####
         h3("textProcessor"),
         fluidRow(
           column(5,
@@ -112,18 +122,22 @@ shinyUI(navbarPage("stm",
                 )
               ),
               fluidRow(
-                column(12,
-                  tags$hr(),
+                tags$hr(),
+                column(6,
                   actionButton('tpTextprocess', "Process Text")
+                ),
+                column(6,
+                  actionButton('tpClearout', "Clear Output")
                 )
               )
             )
           ),
           column(7,
-            verbatimTextOutput("textprocresult")
+            verbatimTextOutput("tpResult")
           )
         )
       ),
+      ##### Plot Removed #####
       fluidRow(
         h3("plotRemoved"),
         fluidRow(
@@ -143,56 +157,83 @@ shinyUI(navbarPage("stm",
                 )
               ),
               fluidRow(
-                column(12,
+                column(6,
                   tags$hr(),
-                  actionButton('plotPlotRemove', "Run plotRemove")
+                  actionButton('prRun', "Run plotRemove")
+                ),
+                column(6,
+                  tags$hr(),
+                  actionButton('prClearout', "Clear Output and Plot")
                 )
               )
             )
           ),
           column(7,
-            verbatimTextOutput("plotRemoveNoTP"),
-            plotOutput("plotRemovePlot")
+            verbatimTextOutput("prOutput"),
+            plotOutput("prPlot")
           )
         )
       ),
+      ##### Prep Documents #####
+      # **TODO**: Support user input that is prepdoc ready?
       fluidRow(
         h3("prepDocuments"),
         fluidRow(
           column(5,
             wellPanel(
-              fluidRow(
-                column(6,
-                  radioButtons("pdChoice", label = h5("Choose data source"),
-                    choices = list("textProcessor Output" = 1, "Raw Uploaded Data" = 2), 
-                    selected = 1)
-                )
-              ),
-              fluidRow(
-                column(6,
-                  textInput('pdDocs', label = h5("documents"))
-                ),
-                column(6,
-                  textInput('pdVocab', label = h5("vocab"))
-                )
-              ),
-              fluidRow(
-                column(6,
-                  textInput('pdMeta', label = h5("metadata"))
-                )
-              ),
+#               fluidRow(
+#                 column(6,
+#                   radioButtons("pdChoice", label = h5("Choose data source"),
+#                     choices = list("textProcessor Output" = 1, "Raw Uploaded Data" = 2), 
+#                     selected = 1)
+#                 )
+#               ),
+#               fluidRow(
+#                 column(6,
+#                   textInput('pdDocs', label = h5("documents"))
+#                 ),
+#                 column(6,
+#                   textInput('pdVocab', label = h5("vocab"))
+#                 )
+#               ),
+#               fluidRow(
+#                 column(6,
+#                   textInput('pdMeta', label = h5("metadata"))
+#                 )
+#               ),
               fluidRow(
                 column(6,
                   numericInput("pdLowThresh", label = h5("lower thresh"), value = 1)
                 ),
+                # **TODO**: Is this an ok default? Option to choose Inf instead?
+                #                 column(6,
+                #                   numericInput("pdUpThresh", label = h5("upper thresh"), value = .Machine$integer.max)
+                #                 )
                 column(6,
-                  numericInput("pdUpThresh", label = h5("upper thresh"), value = .Machine$integer.max)
+                  radioButtons("pdUpThreshChoice", label = h5("Upper Thresh"),
+                    choices = list("Inf" = 1, "Manual Input" = 2), 
+                    selected = 1),
+                  numericInput("pdUpThresh", label = h5(""), value = 10000)
                 )
               ),
               fluidRow(
-                column(12,
+                column(6,
+                  numericInput("pdSubsample", label = h5("subsample"), value = NULL)
+                ),
+                column(6,
+                  radioButtons("pdVerbose", label = h5("verbose"),
+                    choices = list("True" = T, "False" = F), selected = T)
+                )                
+              ),
+              fluidRow(
+                column(6,
                   tags$hr(),
                   actionButton('pdPrepdocs', "Prep Documents")
+                ),
+                # **TODO**: Decide if 'Clear Output' is too vague, since just referring to output text
+                column(6,
+                  tags$hr(),
+                  actionButton('pdClearout', "Clear Output")
                 )
               )
             )
@@ -204,6 +245,8 @@ shinyUI(navbarPage("stm",
       )
     )
   ),
+  ##### STM #####
+  # **TODO**: Find sane limits for numericInputs
   tabPanel("Model",
     titlePanel("Enter Parameters and Run STM model"),
     fluidPage(
@@ -212,27 +255,27 @@ shinyUI(navbarPage("stm",
         fluidRow(
           column(5,
             wellPanel(
-              fluidRow(
-                column(6,
-                  radioButtons("stmChoice", label = h5("Choose data source"),
-                    choices = list("prepDocuments Output" = 1, "Uploaded Data" = 2), 
-                    selected = 1)
-                )
-              ),
-              fluidRow(
-                column(6,
-                  textInput('stmDocs', label = h5("documents"))
-                ),
-                column(6,
-                  textInput('stmVocab', label = h5("vocab"))
-                )
-              ),
+#               fluidRow(
+#                 column(6,
+#                   radioButtons("stmChoice", label = h5("Choose data source"),
+#                     choices = list("prepDocuments Output" = 1, "Uploaded Data" = 2), 
+#                     selected = 1)
+#                 )
+#               ),
+#               fluidRow(
+#                 column(6,
+#                   textInput('stmDocs', label = h5("documents"))
+#                 ),
+#                 column(6,
+#                   textInput('stmVocab', label = h5("vocab"))
+#                 )
+#               ),
               fluidRow(
                 column(6,
                   numericInput("stmK", label = h5("K"), value = 3)
                 ),
                 column(6,
-                  textInput('stmPrev', label = h5("prevalence"), value = NULL)
+                  textInput('stmPrev', label = h5("prevalence formula, include leading ~"), value = NULL)
                 )
               ),
               fluidRow(
@@ -240,16 +283,13 @@ shinyUI(navbarPage("stm",
                   textInput('stmContent', label = h5("content"), value = NULL)
                 ),
                 column(6,
-                  textInput('stmData', label = h5("data"), value = NULL)
+                  numericInput("stmSeed", label = h5("seed"), value = 94301)
                 )
               ),
               fluidRow(
                 column(6,
                   radioButtons("stmInitType", label = h5("init type"),
-                    choices = list("LDA" = 1, "Random" = 2, "Spectral" = 3), selected = 1)
-                ),
-                column(6,
-                  numericInput("stmSeed", label = h5("seed"), value = 94301)
+                    choices = list("LDA" = "LDA", "Random" = "Random", "Spectral" = "Spectral"), selected = "LDA")
                 )
               ),
               fluidRow(
@@ -257,13 +297,13 @@ shinyUI(navbarPage("stm",
                   numericInput("stmMaxEm", label = h5("max em iterations"), value = 10)
                 ),
                 column(6,
-                  textInput('stmEmTol', label = h5("emtol"), value = "0.00001")
+                  numericInput('stmEmTol', label = h5("emtol"), value = 0.00001, step = 0.00001)
                 )
               ),
               fluidRow(
                 column(6,
                   radioButtons("stmVerbose", label = h5("verbose"),
-                    choices = list("True" = TRUE, "False" = FALSE), selected = TRUE)
+                    choices = list("True" = T, "False" = F), selected = T)
                 )
               ),
               fluidRow(
@@ -281,7 +321,85 @@ shinyUI(navbarPage("stm",
       )
     )
   ),
-  tabPanel("Visualizations",
-    titlePanel("Explore Results")
+  ##### Vizualizations #####
+  navbarMenu("Plot",
+    tabPanel("plot.STM",
+      titlePanel("Choose options and plot the summary of an STM object"),
+      fluidPage(
+        fluidRow(
+          h3("plot.STM"),
+          fluidRow(
+            column(5,
+              wellPanel(
+                fluidRow(
+                  column(12,
+                    radioButtons("plotStmType", label = h5("type"),
+                      choices = list("summary" = "summary", "labels" = "labels", 
+                        "perspectives" = "perspectives", "hist" = "hist"), selected = "summary")
+                  )
+                ),
+                fluidRow(
+                  column(6,
+                    numericInput('plotStmN', label = h5("n"), value = 3)
+                  ),
+                  column(6,
+                    textInput('plotStmTopics', label = h5("topics, comma separated (e.g. 1,2)"), value = NULL)
+                  )
+                ),
+                fluidRow(
+                  column(6,
+                    radioButtons("plotStmLabelType", label = h5("labeltype"),
+                      choices = list("prob" = "prob", "frex" = "frex", 
+                        "lift" = "lift", "score" = "score"), selected = "prob")
+                  ),
+                  column(6,
+                    numericInput("plotStmFrexw", 
+                      label = h5("frexw, only needed if frex is chosen for labeltype"),
+                      value = 0.5, step = 0.1)
+                  )
+                ),
+                fluidRow(
+                  column(12,
+                    textInput("plotStmMain", label = h5("main (title)"), value = NULL)
+                  )
+                ),
+                fluidRow(
+                  column(6,
+                    textInput("plotStmXLim", 
+                      label = h5("x-axis limits, comma separated (e.g -.1,.1)"), 
+                      value = NULL)
+                  ),
+                  column(6,
+                    textInput('plotStmYLim', 
+                      label = h5("y-axis limits, comma separated (e.g -10,10)"), 
+                      value = NULL)
+                  )
+                ),
+                fluidRow(
+                  column(6,
+                    tags$hr(),
+                    actionButton('plotStm', "Run STM plot!")
+                  ),
+                  column(6,
+                    tags$hr(),
+                    actionButton('plotStmClearout', "Clear Output")
+                  )
+                )
+              )
+            ),
+            column(7,
+              verbatimTextOutput("plotStmOut"),
+              plotOutput("plotStmPlot")
+            )
+          )
+        )
+      )
+    ),
+    tabPanel("estimateEffects",
+      ""),
+    tabPanel("labelTopics",
+      ""),
+    tabPanel("findThoughts",
+      "")
   )
 ))
