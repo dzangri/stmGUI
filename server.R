@@ -15,6 +15,7 @@ shinyServer(function(input, output, session) {
   # reactive object that stores intermediate results
   # not perfect but unsure how else to do this in R
   userData <- NULL
+#  source("export_data.R", local=T)
   storedData <- reactiveValues()
   
   storedData$data <- NULL
@@ -22,6 +23,8 @@ shinyServer(function(input, output, session) {
   storedData$textprocess <- NULL
   storedData$prepdocs <- NULL
   storedData$stmresult <- NULL
+  
+  
   
   ##### Input Data #####
   # if input file is null, then return nothing
@@ -34,9 +37,9 @@ shinyServer(function(input, output, session) {
     
     storedData$data <- read.csv(userData$datapath, header=input$header, sep=input$sep, quote=input$quote)
     
-    output$data <- renderDataTable({
-      storedData$data
-    }, options=list(pageLength=10))
+    output$data <- DT::renderDataTable({
+      DT::datatable(storedData$data)
+    })
   }))
   
   ##### Text Processor #####
@@ -75,7 +78,7 @@ shinyServer(function(input, output, session) {
       if (!is.null(textDocs)) {
         output$tpResult <- renderPrint({
           # **TODO**: Implement custom stop words and decide on metadata variable
-          storedData$textprocess <- textProcessor(textDocs, metadata=NULL,
+          storedData$textprocess <- textProcessor(textDocs, metadata=storedData$data,
             lowercase=input$tpLowercase, removestopwords=input$tpRemovestop,
             removenumbers=input$tpRemovenum, removepunctuation=input$tpRemovepunc,
             stem=input$tpStem, sparselevel=input$tpSparselevel,
@@ -150,6 +153,8 @@ shinyServer(function(input, output, session) {
     })
   }))
   
+  ##### STM #####
+  
   observeEvent(input$stmRun, ({
     
     pdres <- storedData$prepdocs
@@ -204,11 +209,24 @@ shinyServer(function(input, output, session) {
     plotXLim <- c(as.double(strsplit(input$plotStmXLim, ",")[[1]]))
     plotYLim <- c(as.double(strsplit(input$plotStmYLim, ",")[[1]]))
     
+    output$plotStmOut <- renderPrint({ plotXLim })
+    output$plotStmOut <- renderPrint({ plotYLim })
+    
     output$plotStmPlot <- renderPlot({
       plot.STM(stmObj, type=input$plotStmType, n=input$plotStmN,
         topics=tops, labeltype=input$plotStmLabelType, frexw=input$plotStmFrexw,
         main=input$plotStmMain, xlim=plotXLim, ylim=plotYLim)
     })
+  }))
+  
+  observeEvent(input$exportStm, ({
+    stmObj <- storedData$stmresult
+    if (is.null(stmObj)) {
+      output$stmprocresult <- renderPrint({ "You must successfully run STM before saving!" })
+      return(NULL)
+    }
+    
+    save(stmObj, file="stmResult.RData")
   }))
   
 })

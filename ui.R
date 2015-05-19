@@ -23,22 +23,22 @@ shinyUI(navbarPage("stm",
           "apprear on the right.")),
         checkboxInput('header', 'Header', TRUE),
         radioButtons('sep', 'Separator',
-                         c(Comma=',',
-                         Semicolon=';',
-                         Tab='\t'),
-                       ','),
+          c(Comma=',',
+            Semicolon=';',
+            Tab='\t'),
+          ','),
         radioButtons('quote', 'Quote',
-                         c(None='',
-                         'Double Quote'='"',
-                         'Single Quote'="'"),
-                       '"'),
+          c(None='',
+            'Double Quote'='"',
+            'Single Quote'="'"),
+          '"'),
         actionButton('filesettings', "Submit"),
         width = 3
-        ),
-    mainPanel(
-      verbatimTextOutput("confirm"),
-      dataTableOutput('data'),
-      width = 9
+      ),
+      mainPanel(
+        verbatimTextOutput("confirm"),
+        DT::dataTableOutput('data'),
+        width = 9
       )
     )
   ),
@@ -62,9 +62,6 @@ shinyUI(navbarPage("stm",
               fluidRow(
                 column(6,
                   textInput('tpDocs', label = h5("documents"))
-                ),
-                column(6,
-                  textInput('tpMeta', label = h5("metadata"), value = NULL)
                 )
               ),
               fluidRow(
@@ -181,26 +178,26 @@ shinyUI(navbarPage("stm",
         fluidRow(
           column(5,
             wellPanel(
-#               fluidRow(
-#                 column(6,
-#                   radioButtons("pdChoice", label = h5("Choose data source"),
-#                     choices = list("textProcessor Output" = 1, "Raw Uploaded Data" = 2), 
-#                     selected = 1)
-#                 )
-#               ),
-#               fluidRow(
-#                 column(6,
-#                   textInput('pdDocs', label = h5("documents"))
-#                 ),
-#                 column(6,
-#                   textInput('pdVocab', label = h5("vocab"))
-#                 )
-#               ),
-#               fluidRow(
-#                 column(6,
-#                   textInput('pdMeta', label = h5("metadata"))
-#                 )
-#               ),
+              #               fluidRow(
+              #                 column(6,
+              #                   radioButtons("pdChoice", label = h5("Choose data source"),
+              #                     choices = list("textProcessor Output" = 1, "Raw Uploaded Data" = 2), 
+              #                     selected = 1)
+              #                 )
+              #               ),
+              #               fluidRow(
+              #                 column(6,
+              #                   textInput('pdDocs', label = h5("documents"))
+              #                 ),
+              #                 column(6,
+              #                   textInput('pdVocab', label = h5("vocab"))
+              #                 )
+              #               ),
+              #               fluidRow(
+              #                 column(6,
+              #                   textInput('pdMeta', label = h5("metadata"))
+              #                 )
+              #               ),
               fluidRow(
                 column(6,
                   numericInput("pdLowThresh", label = h5("lower thresh"), value = 1)
@@ -251,72 +248,77 @@ shinyUI(navbarPage("stm",
     titlePanel("Enter Parameters and Run STM model"),
     fluidPage(
       fluidRow(
-        h3("stm"),
-        fluidRow(
-          column(5,
-            wellPanel(
-#               fluidRow(
-#                 column(6,
-#                   radioButtons("stmChoice", label = h5("Choose data source"),
-#                     choices = list("prepDocuments Output" = 1, "Uploaded Data" = 2), 
-#                     selected = 1)
-#                 )
-#               ),
-#               fluidRow(
-#                 column(6,
-#                   textInput('stmDocs', label = h5("documents"))
-#                 ),
-#                 column(6,
-#                   textInput('stmVocab', label = h5("vocab"))
-#                 )
-#               ),
-              fluidRow(
-                column(6,
-                  numericInput("stmK", label = h5("K"), value = 3)
-                ),
-                column(6,
-                  textInput('stmPrev', label = h5("prevalence formula, include leading ~"), value = NULL)
-                )
+        column(10,
+          h3("stm")
+        ),
+        column(2,
+          actionButton('exportStm', "Export STM data")
+        )
+      ),
+      fluidRow(
+        column(5,
+          wellPanel(
+            #               fluidRow(
+            #                 column(6,
+            #                   radioButtons("stmChoice", label = h5("Choose data source"),
+            #                     choices = list("prepDocuments Output" = 1, "Uploaded Data" = 2), 
+            #                     selected = 1)
+            #                 )
+            #               ),
+            #               fluidRow(
+            #                 column(6,
+            #                   textInput('stmDocs', label = h5("documents"))
+            #                 ),
+            #                 column(6,
+            #                   textInput('stmVocab', label = h5("vocab"))
+            #                 )
+            #               ),
+            fluidRow(
+              column(6,
+                numericInput("stmK", label = h5("K"), value = 3)
               ),
-              fluidRow(
-                column(6,
-                  textInput('stmContent', label = h5("content"), value = NULL)
-                ),
-                column(6,
-                  numericInput("stmSeed", label = h5("seed"), value = 94301)
-                )
+              column(6,
+                textInput('stmPrev', label = h5("prevalence formula, include leading ~"), value = NULL)
+              )
+            ),
+            fluidRow(
+              column(6,
+                textInput('stmContent', label = h5("content"), value = NULL)
               ),
-              fluidRow(
-                column(6,
-                  radioButtons("stmInitType", label = h5("init type"),
-                    choices = list("LDA" = "LDA", "Random" = "Random", "Spectral" = "Spectral"), selected = "LDA")
-                )
+              column(6,
+                numericInput("stmSeed", label = h5("seed"), value = 94301)
+              )
+            ),
+            fluidRow(
+              column(6,
+                radioButtons("stmInitType", label = h5("init type"),
+                  choices = list("LDA" = "LDA", "Random" = "Random", "Spectral" = "Spectral"), selected = "LDA")
+              )
+            ),
+            fluidRow(
+              column(6,
+                numericInput("stmMaxEm", label = h5("max em iterations"), value = 10)
               ),
-              fluidRow(
-                column(6,
-                  numericInput("stmMaxEm", label = h5("max em iterations"), value = 10)
-                ),
-                column(6,
-                  numericInput('stmEmTol', label = h5("emtol"), value = 0.00001, step = 0.00001)
-                )
-              ),
-              fluidRow(
-                column(6,
-                  radioButtons("stmVerbose", label = h5("verbose"),
-                    choices = list("True" = T, "False" = F), selected = T)
-                )
-              ),
-              fluidRow(
-                column(12,
-                  tags$hr(),
-                  actionButton('stmRun', "Run STM")
-                )
+              column(6,
+                numericInput('stmEmTol', label = h5("emtol"), value = 0.00001, step = 0.00001)
+              )
+            ),
+            fluidRow(
+              column(6,
+                radioButtons("stmVerbose", label = h5("verbose"),
+                  choices = list("True" = T, "False" = F), selected = T)
+              )
+            ),
+            fluidRow(
+              column(12,
+                tags$hr(),
+                actionButton('stmRun', "Run STM")
               )
             )
-          ),
-          column(7,
-            verbatimTextOutput("stmprocresult")
           )
+        ),
+        column(7,
+          verbatimTextOutput("stmprocresult")
         )
       )
     )
@@ -327,70 +329,72 @@ shinyUI(navbarPage("stm",
       titlePanel("Choose options and plot the summary of an STM object"),
       fluidPage(
         fluidRow(
-          h3("plot.STM"),
-          fluidRow(
-            column(5,
-              wellPanel(
-                fluidRow(
-                  column(12,
-                    radioButtons("plotStmType", label = h5("type"),
-                      choices = list("summary" = "summary", "labels" = "labels", 
-                        "perspectives" = "perspectives", "hist" = "hist"), selected = "summary")
-                  )
+          column(9, 
+            h3("plot.STM")
+          )
+        ),
+        fluidRow(
+          column(5,
+            wellPanel(
+              fluidRow(
+                column(12,
+                  radioButtons("plotStmType", label = h5("type"),
+                    choices = list("summary" = "summary", "labels" = "labels", 
+                      "perspectives" = "perspectives", "hist" = "hist"), selected = "summary")
+                )
+              ),
+              fluidRow(
+                column(6,
+                  numericInput('plotStmN', label = h5("n"), value = 3)
                 ),
-                fluidRow(
-                  column(6,
-                    numericInput('plotStmN', label = h5("n"), value = 3)
-                  ),
-                  column(6,
-                    textInput('plotStmTopics', label = h5("topics, comma separated (e.g. 1,2)"), value = NULL)
-                  )
+                column(6,
+                  textInput('plotStmTopics', label = h5("topics, comma separated (e.g. 1,2)"), value = NULL)
+                )
+              ),
+              fluidRow(
+                column(6,
+                  radioButtons("plotStmLabelType", label = h5("labeltype"),
+                    choices = list("prob" = "prob", "frex" = "frex", 
+                      "lift" = "lift", "score" = "score"), selected = "prob")
                 ),
-                fluidRow(
-                  column(6,
-                    radioButtons("plotStmLabelType", label = h5("labeltype"),
-                      choices = list("prob" = "prob", "frex" = "frex", 
-                        "lift" = "lift", "score" = "score"), selected = "prob")
-                  ),
-                  column(6,
-                    numericInput("plotStmFrexw", 
-                      label = h5("frexw, only needed if frex is chosen for labeltype"),
-                      value = 0.5, step = 0.1)
-                  )
+                column(6,
+                  numericInput("plotStmFrexw", 
+                    label = h5("frexw, only needed if frex is chosen for labeltype"),
+                    value = 0.5, step = 0.1)
+                )
+              ),
+              fluidRow(
+                column(12,
+                  textInput("plotStmMain", label = h5("main (title)"), value = NULL)
+                )
+              ),
+              fluidRow(
+                column(6,
+                  textInput("plotStmXLim", 
+                    label = h5("x-axis limits, comma separated (e.g -.1,.1)"), 
+                    value = NULL)
                 ),
-                fluidRow(
-                  column(12,
-                    textInput("plotStmMain", label = h5("main (title)"), value = NULL)
-                  )
+                column(6,
+                  textInput('plotStmYLim', 
+                    label = h5("y-axis limits, comma separated (e.g -10,10)"), 
+                    value = NULL)
+                )
+              ),
+              fluidRow(
+                column(6,
+                  tags$hr(),
+                  actionButton('plotStm', "Run STM plot!")
                 ),
-                fluidRow(
-                  column(6,
-                    textInput("plotStmXLim", 
-                      label = h5("x-axis limits, comma separated (e.g -.1,.1)"), 
-                      value = NULL)
-                  ),
-                  column(6,
-                    textInput('plotStmYLim', 
-                      label = h5("y-axis limits, comma separated (e.g -10,10)"), 
-                      value = NULL)
-                  )
-                ),
-                fluidRow(
-                  column(6,
-                    tags$hr(),
-                    actionButton('plotStm', "Run STM plot!")
-                  ),
-                  column(6,
-                    tags$hr(),
-                    actionButton('plotStmClearout', "Clear Output")
-                  )
+                column(6,
+                  tags$hr(),
+                  actionButton('plotStmClearout', "Clear Output")
                 )
               )
-            ),
-            column(7,
-              verbatimTextOutput("plotStmOut"),
-              plotOutput("plotStmPlot")
             )
+          ),
+          column(7,
+            verbatimTextOutput("plotStmOut"),
+            plotOutput("plotStmPlot")
           )
         )
       )
