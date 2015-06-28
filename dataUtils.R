@@ -1,0 +1,10 @@
+changeCsStringToDoubleVectorOrLeaveNull <- function(csString) {
+  stringToVector <- csString
+  if (nchar(stringToVector) > 0) {
+    stringToVector <- c(as.double(strsplit(stringToVector, ",")[[1]]))
+    return(stringToVector)
+  }
+  else {
+    return(NULL)
+  }
+}

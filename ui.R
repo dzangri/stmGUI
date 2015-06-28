@@ -348,7 +348,9 @@ shinyUI(navbarPage("stm",
                   numericInput('plotStmN', label = h5("n"), value = 3)
                 ),
                 column(6,
-                  textInput('plotStmTopics', label = h5("topics, comma separated (e.g. 1,2)"), value = NULL)
+                  textInput('plotStmTopics', 
+                    label = h5("topics, comma separated (e.g. 1,2)"), 
+                    value = NULL)
                 )
               ),
               fluidRow(

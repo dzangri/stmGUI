@@ -7,6 +7,7 @@
 
 library(shiny)
 library(stm)
+source("dataUtils.R")
 
 options(shiny.maxRequestSize=100*1024^2)
 
@@ -15,7 +16,7 @@ shinyServer(function(input, output, session) {
   # reactive object that stores intermediate results
   # not perfect but unsure how else to do this in R
   userData <- NULL
-#  source("export_data.R", local=T)
+  load("stmResult.RData")
   storedData <- reactiveValues()
   
   storedData$data <- NULL
@@ -35,7 +36,7 @@ shinyServer(function(input, output, session) {
     if (is.null(userData))
       return(NULL)
     
-    storedData$data <- read.csv(userData$datapath, header=input$header, sep=input$sep, quote=input$quote)
+    storedData$data <- read.csv2(userData$datapath, header=input$header, sep=input$sep, quote=input$quote)
     
     output$data <- DT::renderDataTable({
       DT::datatable(storedData$data)
@@ -198,19 +199,16 @@ shinyServer(function(input, output, session) {
   }))
   
   observeEvent(input$plotStm, ({
-    stmObj <- storedData$stmresult
+#    stmObj <- storedData$stmresult
     
     if (is.null(stmObj)) {
       output$plotStmOut <- renderPrint({ "You must successfully run STM before plotting!" })
       return(NULL)
     }
     
-    tops <- c(as.integer(strsplit(input$plotStmTopics, ",")[[1]]))
-    plotXLim <- c(as.double(strsplit(input$plotStmXLim, ",")[[1]]))
-    plotYLim <- c(as.double(strsplit(input$plotStmYLim, ",")[[1]]))
-    
-    output$plotStmOut <- renderPrint({ plotXLim })
-    output$plotStmOut <- renderPrint({ plotYLim })
+    tops <- changeCsStringToDoubleVectorOrLeaveNull(input$plotStmTopics)
+    plotXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$plotStmXLim)
+    plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$plotStmYLim)
     
     output$plotStmPlot <- renderPlot({
       plot.STM(stmObj, type=input$plotStmType, n=input$plotStmN,
