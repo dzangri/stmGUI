@@ -401,10 +401,55 @@ shinyUI(navbarPage("stm",
         )
       )
     ),
-    tabPanel("estimateEffects",
-      ""),
     tabPanel("labelTopics",
-      ""),
+      titlePanel("Generate a set of words describing each topic from an STM object"),
+      fluidPage(
+        fluidRow(
+          column(9, 
+            h3("labelTopics")
+          )
+        ),
+        fluidRow(
+          column(5,
+            wellPanel(
+              fluidRow(
+                column(6,
+                  textInput('labelTopicsTopics', 
+                    label = h5("topics, comma separated (e.g. 1,2)"), 
+                    value = NULL)
+                ),
+                column(6,
+                  numericInput('labelTopicsN', 
+                    label = h5("n, number of words to label each topic"), 
+                    value = 7)
+                )
+              ),
+              fluidRow(
+                column(6,
+                  numericInput("labelTopicsFrexw", 
+                    label = h5("frexweight, a weight used in FREX scoring algorithm"),
+                    value = 0.5, step = 0.1)
+                )
+              ),
+              fluidRow(
+                column(6,
+                  tags$hr(),
+                  actionButton('labelTopics', "Run Label Topics")
+                ),
+                column(6,
+                  tags$hr(),
+                  actionButton('labelTopicsClearout', "Clear Output")
+                )
+              )
+            )
+          ),
+          column(7,
+            verbatimTextOutput("labelTopicsOut"),
+            plotOutput("labelTopicsPlot")
+          )
+        )
+      )  
+    ),
     tabPanel("findThoughts",
       "")
   )

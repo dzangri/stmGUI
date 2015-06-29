@@ -8,6 +8,7 @@
 library(shiny)
 library(stm)
 source("dataUtils.R")
+source("shinyUtils.R")
 
 options(shiny.maxRequestSize=100*1024^2)
 
@@ -16,7 +17,7 @@ shinyServer(function(input, output, session) {
   # reactive object that stores intermediate results
   # not perfect but unsure how else to do this in R
   userData <- NULL
-  load("stmResult.RData")
+#  load("stmResult.RData")
   storedData <- reactiveValues()
   
   storedData$data <- NULL
@@ -48,9 +49,11 @@ shinyServer(function(input, output, session) {
   # selects gadarian or data that was input by the user
   # **TODO**: clear output without needing a button
   
-  observeEvent(input$tpClearout, ({
-    output$tpResult <- renderPrint({ invisible(NULL) })
-  }))
+#   observeEvent(input$tpClearout, ({
+#     output$tpResult <- renderPrint({ invisible(NULL) })
+#   }))
+  
+  clearInputGivenEvent(input$tpClearout, output$tpResult)
   
   observeEvent(input$tpTextprocess, ({
     
@@ -175,6 +178,16 @@ shinyServer(function(input, output, session) {
     
   }))
   
+  observeEvent(input$exportStm, ({
+    stmObj <- storedData$stmresult
+    if (is.null(stmObj)) {
+      output$stmprocresult <- renderPrint({ "You must successfully run STM before saving!" })
+      return(NULL)
+    }
+    
+    save(stmObj, file="stmResult.RData")
+  }))
+  
   ##### plot STM #####
   # currently leaving out as inputs until future input:
   #   family, width, covarlevels, plabels, text.cex
@@ -199,7 +212,7 @@ shinyServer(function(input, output, session) {
   }))
   
   observeEvent(input$plotStm, ({
-#    stmObj <- storedData$stmresult
+    #    stmObj <- storedData$stmresult
     
     if (is.null(stmObj)) {
       output$plotStmOut <- renderPrint({ "You must successfully run STM before plotting!" })
@@ -217,14 +230,19 @@ shinyServer(function(input, output, session) {
     })
   }))
   
-  observeEvent(input$exportStm, ({
-    stmObj <- storedData$stmresult
+  observeEvent(input$labelTopics, ({
+    #    stmObj <- storedData$stmresult
+    
     if (is.null(stmObj)) {
-      output$stmprocresult <- renderPrint({ "You must successfully run STM before saving!" })
+      output$labelTopicsOut <- renderPrint({ "You must successfully run STM before running Label Topics" })
       return(NULL)
     }
     
-    save(stmObj, file="stmResult.RData")
+    tops <- changeCsStringToDoubleVectorOrLeaveNull(input$labelTopicsTopics)
+    
+    output$labelTopicsOut <- renderPrint({
+      labelTopics(stmObj, n=input$labelTopicsN, topics=tops, frexweight=input$labelTopicsFrexw)
+    })
   }))
   
 })
