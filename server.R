@@ -7,26 +7,29 @@
 
 library(shiny)
 library(stm)
+library(data.table)
 source("dataUtils.R")
-source("shinyUtils.R")
+
+#### TEST CODE HERE ####
+# source("shinyUtils.R")
+####
 
 options(shiny.maxRequestSize=100*1024^2)
 
 shinyServer(function(input, output, session) {
   
+  #### TEST CODE HERE ####
+  #  load("stmResult.RData")
+  ####
+  
   # reactive object that stores intermediate results
   # not perfect but unsure how else to do this in R
-  userData <- NULL
-#  load("stmResult.RData")
   storedData <- reactiveValues()
   
   storedData$data <- NULL
-  storedData$storeconfirm <- ""
   storedData$textprocess <- NULL
   storedData$prepdocs <- NULL
   storedData$stmresult <- NULL
-  
-  
   
   ##### Input Data #####
   # if input file is null, then return nothing
@@ -37,7 +40,9 @@ shinyServer(function(input, output, session) {
     if (is.null(userData))
       return(NULL)
     
-    storedData$data <- read.csv2(userData$datapath, header=input$header, sep=input$sep, quote=input$quote)
+    # fread or read.csv
+    storedData$data <- read.csv(userData$datapath, header=input$header, sep=input$sep, quote=input$quote)
+                      # fread(userData$datapath)
     
     output$data <- DT::renderDataTable({
       DT::datatable(storedData$data)
@@ -49,26 +54,24 @@ shinyServer(function(input, output, session) {
   # selects gadarian or data that was input by the user
   # **TODO**: clear output without needing a button
   
-#   observeEvent(input$tpClearout, ({
-#     output$tpResult <- renderPrint({ invisible(NULL) })
-#   }))
-  
-  clearInputGivenEvent(input$tpClearout, output$tpResult)
+  observeEvent(input$tpClearout, ({
+    output$tpResult <- renderPrint({ invisible(NULL) })
+  }))
+ 
+#### TEST ####
+#  clearInputGivenEvent(input$tpClearout, output$tpResult)
+####
   
   observeEvent(input$tpTextprocess, ({
     
+    docsForTp <- NULL
+    metadataForTp <- NULL
+    dataType <- NULL
+    
     if (input$tpGadarian == 1) {
-      output$tpResult <- renderPrint({
-        storedData$textprocess <- textProcessor(documents=gadarian$open.ended.response, metadata=gadarian,
-          lowercase=input$tpLowercase, removestopwords=input$tpRemovestop,
-          removenumbers=input$tpRemovenum, removepunctuation=input$tpRemovepunc,
-          stem=input$tpStem, sparselevel=input$tpSparselevel,
-          language=input$tpLang, verbose=input$tpVerbose,
-          onlycharacter=input$tpOnlychar, striphtml=input$tpStriphtml,
-          #         **TODO**: implement custom stop words 
-          customstopwords=NULL)
-        print("Done processing Gadarian dataset!")
-      })
+      docsForTp <- gadarian$open.ended.response
+      metadataForTp <- gadarian 
+      dataType <- "Gadarian"
     }
     else {
       if (is.null(storedData$data)){
@@ -77,28 +80,31 @@ shinyServer(function(input, output, session) {
       }
       
       docs <- input$tpDocs
-      textDocs <- storedData$data[[docs]]
+      docsForTp <- storedData$data[[docs]]
       
-      if (!is.null(textDocs)) {
-        output$tpResult <- renderPrint({
-          # **TODO**: Implement custom stop words and decide on metadata variable
-          storedData$textprocess <- textProcessor(textDocs, metadata=storedData$data,
-            lowercase=input$tpLowercase, removestopwords=input$tpRemovestop,
-            removenumbers=input$tpRemovenum, removepunctuation=input$tpRemovepunc,
-            stem=input$tpStem, sparselevel=input$tpSparselevel,
-            language=input$tpLang, verbose=input$tpVerbose,
-            onlycharacter=input$tpOnlychar, striphtml=input$tpStriphtml,
-            customstopwords=NULL)
-          if (length(storedData$textprocess$vocab) > 0)
-            print("Done processing user data!")
-          else {
-            print("Text processor did not complete correctly!")
-          }
-        })
-      }
-      else {
-        output$tpResult <- renderText({"Try again with column name of document vector!"})
-      }
+      metadataForTp <- storedData$data  
+      dataType <- "user"
+    }
+    
+    if (!is.null(docsForTp)) {
+      output$tpResult <- renderPrint({
+        # **TODO**: Implement custom stop words and decide on metadata variable
+        storedData$textprocess <- isolate(textProcessor(docsForTp, metadata=metadataForTp,
+          lowercase=input$tpLowercase, removestopwords=input$tpRemovestop,
+          removenumbers=input$tpRemovenum, removepunctuation=input$tpRemovepunc,
+          stem=input$tpStem, sparselevel=input$tpSparselevel,
+          language=input$tpLang, verbose=input$tpVerbose,
+          onlycharacter=input$tpOnlychar, striphtml=input$tpStriphtml,
+          customstopwords=NULL))
+        if (length(storedData$textprocess$vocab) > 0)
+          sprintf("Done processing %s data!", dataType)
+        else {
+          print("Text processor did not complete correctly!")
+        }
+      })
+    }
+    else {
+      output$tpResult <- renderText({"Try again with column name of the document vector!"})
     }
   }))
   
@@ -120,8 +126,8 @@ shinyServer(function(input, output, session) {
     plotRevDocs <- storedData$textprocess$documents
     
     output$prPlot <- renderPlot(
-      plotRemoved(plotRevDocs, lower.thresh = seq(from = input$plotLowThresh,
-        to = input$plotUpThresh, by = input$plotInterval)
+      isolate(plotRemoved(plotRevDocs, lower.thresh = seq(from = input$plotLowThresh,
+        to = input$plotUpThresh, by = input$plotInterval))
       )
     )
   }))
@@ -130,6 +136,17 @@ shinyServer(function(input, output, session) {
   # calculates on the output from text processor
   # or calculates on the file uploaded by the user
   # **TODO**: expand functionality for case of user-input file
+  
+  # Change Upper Thresh
+  observe({
+    pdUpThreshType <- input$pdUpThreshChoice
+    
+    if (pdUpThreshType == 1) {
+      updateNumericInput(session, 'pdUpThresh', value = Inf )
+    } else {
+      updateNumericInput(session, 'pdUpThresh', value = 10000 )
+    }
+  })
   
   observeEvent(input$pdClearout, ({
     output$prepdocresults <- renderPrint({ invisible(NULL) })
@@ -151,9 +168,9 @@ shinyServer(function(input, output, session) {
     tpres <- storedData$textprocess
     
     output$prepdocresults <- renderPrint({
-      storedData$prepdocs <- prepDocuments(documents=tpres$documents,
+      storedData$prepdocs <- isolate(prepDocuments(documents=tpres$documents,
         vocab=tpres$vocab, meta=tpres$meta, lower.thresh=input$pdLowThresh,
-        upper.thresh=upperThresh, subsample=NULL, verbose=input$pdVerbose)
+        upper.thresh=upperThresh, subsample=NULL, verbose=input$pdVerbose))
     })
   }))
   
@@ -169,11 +186,11 @@ shinyServer(function(input, output, session) {
     }
     
     output$stmprocresult <- renderPrint({
-      storedData$stmresult <- stm(documents=pdres$documents,
+      storedData$stmresult <- isolate(stm(documents=pdres$documents,
         vocab=pdres$vocab, K=input$stmK, prevalence=formula(input$stmPrev),
         data=pdres$meta, init.type=input$stmInitType,
         seed=input$stmSeed, max.em.its=input$stmMaxEm, emtol=input$stmEmTol,
-        verbose=T)
+        verbose=T))
     })
     
   }))
@@ -212,7 +229,7 @@ shinyServer(function(input, output, session) {
   }))
   
   observeEvent(input$plotStm, ({
-    #    stmObj <- storedData$stmresult
+    stmObj <- storedData$stmresult
     
     if (is.null(stmObj)) {
       output$plotStmOut <- renderPrint({ "You must successfully run STM before plotting!" })
@@ -224,14 +241,14 @@ shinyServer(function(input, output, session) {
     plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$plotStmYLim)
     
     output$plotStmPlot <- renderPlot({
-      plot.STM(stmObj, type=input$plotStmType, n=input$plotStmN,
+      isolate(plot.STM(stmObj, type=input$plotStmType, n=input$plotStmN,
         topics=tops, labeltype=input$plotStmLabelType, frexw=input$plotStmFrexw,
-        main=input$plotStmMain, xlim=plotXLim, ylim=plotYLim)
+        main=input$plotStmMain, xlim=plotXLim, ylim=plotYLim))
     })
   }))
   
   observeEvent(input$labelTopics, ({
-    #    stmObj <- storedData$stmresult
+    stmObj <- storedData$stmresult
     
     if (is.null(stmObj)) {
       output$labelTopicsOut <- renderPrint({ "You must successfully run STM before running Label Topics" })
@@ -241,7 +258,7 @@ shinyServer(function(input, output, session) {
     tops <- changeCsStringToDoubleVectorOrLeaveNull(input$labelTopicsTopics)
     
     output$labelTopicsOut <- renderPrint({
-      labelTopics(stmObj, n=input$labelTopicsN, topics=tops, frexweight=input$labelTopicsFrexw)
+      isolate(labelTopics(stmObj, n=input$labelTopicsN, topics=tops, frexweight=input$labelTopicsFrexw))
     })
   }))
   

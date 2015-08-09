@@ -1,7 +1,8 @@
 library(shiny)
 
 clearInputGivenEvent <- function(inputName, outputToClear) {
-#  observeEvent(inputName, ({
+  observe({
+    inputName
     outputToClear <- renderPrint({ invisible(NULL) })
-#  }))
+  })
 }
