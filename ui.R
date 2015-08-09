@@ -14,13 +14,14 @@ shinyUI(navbarPage("stm",
   ##### Data Input #####
   tabPanel("Data",
     titlePanel("File Upload"),
+    h4("Proceed to Processing after the data has loaded"),
     sidebarLayout(
       sidebarPanel(
         fileInput('upDatafile', 'Choose File'),
         tags$hr(),
         h6(paste("If your data is a csv or tsv, select the",
           "correct settings below, hit Submit, and a DataTable will",
-          "apprear on the right.")),
+          "appear on the right.")),
         checkboxInput('header', 'Header', TRUE),
         radioButtons('sep', 'Separator',
           c(Comma=',',
@@ -54,6 +55,15 @@ shinyUI(navbarPage("stm",
             wellPanel(
               fluidRow(
                 column(6,
+                  actionButton('tpTextprocess', "Process Text")
+                ),
+                column(6,
+                  actionButton('tpClearout', "Clear Output")
+                )
+              ),
+              fluidRow(
+                tags$hr(),
+                column(6,
                   radioButtons("tpGadarian", label = h5("Choose textProcessor Datasource"),
                     choices = list("Gadarian Dataset" = 1, "Uploaded Data" = 2), 
                     selected = 1)
@@ -61,7 +71,7 @@ shinyUI(navbarPage("stm",
               ),
               fluidRow(
                 column(6,
-                  textInput('tpDocs', label = h5("documents"))
+                  textInput('tpDocs', label = h5("Name of column with text documents"))
                 )
               ),
               fluidRow(
@@ -117,15 +127,6 @@ shinyUI(navbarPage("stm",
                 column(12,
                   textInput('tpCustomstop', label = h5("custom stopwords"), value = NULL)
                 )
-              ),
-              fluidRow(
-                tags$hr(),
-                column(6,
-                  actionButton('tpTextprocess', "Process Text")
-                ),
-                column(6,
-                  actionButton('tpClearout', "Clear Output")
-                )
               )
             )
           ),
@@ -142,25 +143,25 @@ shinyUI(navbarPage("stm",
             wellPanel(
               fluidRow(
                 column(6,
+                  actionButton('prRun', "Run plotRemove")
+                ),
+                column(6,
+                  actionButton('prClearout', "Clear Output and Plot")
+                )
+              ),
+              fluidRow(
+                column(6,
+                  tags$hr(),
                   numericInput("plotLowThresh", label = h5("lower thresh"), value = 1)
                 ),
                 column(6,
+                  tags$hr(),
                   numericInput("plotUpThresh", label = h5("upper thresh"), value = 200)
                 )
               ),
               fluidRow(
                 column(6,
                   numericInput("plotInterval", label = h5("interval"), value = 1)
-                )
-              ),
-              fluidRow(
-                column(6,
-                  tags$hr(),
-                  actionButton('prRun', "Run plotRemove")
-                ),
-                column(6,
-                  tags$hr(),
-                  actionButton('prClearout', "Clear Output and Plot")
                 )
               )
             )
@@ -178,6 +179,15 @@ shinyUI(navbarPage("stm",
         fluidRow(
           column(5,
             wellPanel(
+              fluidRow(
+                column(6,
+                  actionButton('pdPrepdocs', "Prep Documents")
+                ),
+                # **TODO**: Decide if 'Clear Output' is too vague, since just referring to output text
+                column(6,
+                  actionButton('pdClearout', "Clear Output")
+                )
+              ),
               #               fluidRow(
               #                 column(6,
               #                   radioButtons("pdChoice", label = h5("Choose data source"),
@@ -199,6 +209,7 @@ shinyUI(navbarPage("stm",
               #                 )
               #               ),
               fluidRow(
+                tags$hr(),
                 column(6,
                   numericInput("pdLowThresh", label = h5("lower thresh"), value = 1)
                 ),
@@ -206,6 +217,7 @@ shinyUI(navbarPage("stm",
                 #                 column(6,
                 #                   numericInput("pdUpThresh", label = h5("upper thresh"), value = .Machine$integer.max)
                 #                 )
+                tags$hr(),
                 column(6,
                   radioButtons("pdUpThreshChoice", label = h5("Upper Thresh"),
                     choices = list("Inf" = 1, "Manual Input" = 2), 
@@ -221,17 +233,6 @@ shinyUI(navbarPage("stm",
                   radioButtons("pdVerbose", label = h5("verbose"),
                     choices = list("True" = T, "False" = F), selected = T)
                 )                
-              ),
-              fluidRow(
-                column(6,
-                  tags$hr(),
-                  actionButton('pdPrepdocs', "Prep Documents")
-                ),
-                # **TODO**: Decide if 'Clear Output' is too vague, since just referring to output text
-                column(6,
-                  tags$hr(),
-                  actionButton('pdClearout', "Clear Output")
-                )
               )
             )
           ),
@@ -401,11 +402,56 @@ shinyUI(navbarPage("stm",
         )
       )
     ),
-    tabPanel("estimateEffects",
-      ""),
     tabPanel("labelTopics",
-      ""),
-    tabPanel("findThoughts",
-      "")
+      titlePanel("Generate a set of words describing each topic from an STM object"),
+      fluidPage(
+        fluidRow(
+          column(9, 
+            h3("labelTopics")
+          )
+        ),
+        fluidRow(
+          column(5,
+            wellPanel(
+              fluidRow(
+                column(6,
+                  textInput('labelTopicsTopics', 
+                    label = h5("topics, comma separated (e.g. 1,2)"), 
+                    value = NULL)
+                ),
+                column(6,
+                  numericInput('labelTopicsN', 
+                    label = h5("n, number of words to label each topic"), 
+                    value = 7)
+                )
+              ),
+              fluidRow(
+                column(6,
+                  numericInput("labelTopicsFrexw", 
+                    label = h5("frexweight, a weight used in FREX scoring algorithm"),
+                    value = 0.5, step = 0.1)
+                )
+              ),
+              fluidRow(
+                column(6,
+                  tags$hr(),
+                  actionButton('labelTopics', "Run Label Topics")
+                ),
+                column(6,
+                  tags$hr(),
+                  actionButton('labelTopicsClearout', "Clear Output")
+                )
+              )
+            )
+          ),
+          column(7,
+            verbatimTextOutput("labelTopicsOut"),
+            plotOutput("labelTopicsPlot")
+          )
+        )
+      )  
+    )
+#     tabPanel("findThoughts",
+#       "")
   )
 ))
