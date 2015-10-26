@@ -188,9 +188,11 @@ shinyServer(function(input, output, session) {
     output$stmprocresult <- renderPrint({
       storedData$stmresult <- isolate(stm(documents=pdres$documents,
         vocab=pdres$vocab, K=input$stmK, prevalence=formula(input$stmPrev),
-        data=pdres$meta, init.type=input$stmInitType,
-        seed=input$stmSeed, max.em.its=input$stmMaxEm, emtol=input$stmEmTol,
-        verbose=T))
+        data=pdres$meta, init.type=input$stmInitType,seed=input$stmSeed, 
+        max.em.its=input$stmMaxEm, emtol=input$stmEmTol, verbose=T, 
+        reportevery=input$stmReportEvr, LDAbeta=input$stmLdaBeta,
+        interactions=input$stmInteractions, ngroups$stmNgroups,
+        gamma.prior=input$stmGamma))
     })
     
   }))
