@@ -71,7 +71,7 @@ shinyUI(navbarPage("stm",
               ),
               fluidRow(
                 column(6,
-                  textInput('tpDocs', label = h5("Name of column with text documents"))
+                  textInput('tpDocs', label = h5("Name of column containing text documents"))
                 )
               ),
               fluidRow(
@@ -188,26 +188,6 @@ shinyUI(navbarPage("stm",
                   actionButton('pdClearout', "Clear Output")
                 )
               ),
-              #               fluidRow(
-              #                 column(6,
-              #                   radioButtons("pdChoice", label = h5("Choose data source"),
-              #                     choices = list("textProcessor Output" = 1, "Raw Uploaded Data" = 2), 
-              #                     selected = 1)
-              #                 )
-              #               ),
-              #               fluidRow(
-              #                 column(6,
-              #                   textInput('pdDocs', label = h5("documents"))
-              #                 ),
-              #                 column(6,
-              #                   textInput('pdVocab', label = h5("vocab"))
-              #                 )
-              #               ),
-              #               fluidRow(
-              #                 column(6,
-              #                   textInput('pdMeta', label = h5("metadata"))
-              #                 )
-              #               ),
               fluidRow(
                 tags$hr(),
                 column(6,
@@ -308,6 +288,30 @@ shinyUI(navbarPage("stm",
               column(6,
                 radioButtons("stmVerbose", label = h5("verbose"),
                   choices = list("True" = T, "False" = F), selected = T)
+              ),
+              column(6,
+                numericInput("stmReportEvr", label = h5("report every"), value = 5)
+              )
+            ),
+            fluidRow(
+              column(6,
+                radioButtons("stmLdaBeta", label = h5("LDA Beta"),
+                  choices = list("True" = T, "False" = F), selected = T)
+              ),
+              column(6,
+                radioButtons("stmInteractions", label = h5("Interactions"),
+                  choices = list("True" = T, "False" = F), selected = T)
+              )
+            ),
+            fluidRow(
+              column(6,
+                numericInput("stmNgroups", label = h5("ngroups"), value = 5)
+              ),
+              column(6,
+                column(6,
+                  radioButtons("stmGamma", label = h5("Gamma Prior"),
+                    choices = list("Pooled" = "Pooled", "L1" = "L1"), selected = "Pooled")
+              )
               )
             ),
             fluidRow(
