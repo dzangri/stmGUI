@@ -2,15 +2,14 @@
 #
 # ui for running stm in Shiny
 #
-# author: @dzangri
-#
 # **TODO**: separate required params from optional ones
 
 library(markdown)
 library(stm)
 
-shinyUI(navbarPage("stm",
-  
+shinyUI(
+  navbarPage("stm",
+
   ##### Data Input #####
   tabPanel("Data",
     titlePanel("File Upload"),
@@ -37,7 +36,7 @@ shinyUI(navbarPage("stm",
         width = 3
       ),
       mainPanel(
-        verbatimTextOutput("confirm"),
+        verbatimTextOutput("dataOutputText"),
         DT::dataTableOutput('data'),
         width = 9
       )
@@ -47,6 +46,7 @@ shinyUI(navbarPage("stm",
   tabPanel("Processing",
     titlePanel("Process and Prep Documents"),
     fluidPage(
+      shinyjs::useShinyjs(),
       fluidRow(
         ##### Text Processor #####
         h3("textProcessor"),
@@ -65,7 +65,7 @@ shinyUI(navbarPage("stm",
                 tags$hr(),
                 column(6,
                   radioButtons("tpGadarian", label = h5("Choose textProcessor Datasource"),
-                    choices = list("Gadarian Dataset" = 1, "Uploaded Data" = 2), 
+                    choices = list("Gadarian Dataset" = 1, "Uploaded Data" = 2),
                     selected = 1)
                 )
               ),
@@ -200,7 +200,7 @@ shinyUI(navbarPage("stm",
                 tags$hr(),
                 column(6,
                   radioButtons("pdUpThreshChoice", label = h5("Upper Thresh"),
-                    choices = list("Inf" = 1, "Manual Input" = 2), 
+                    choices = list("Inf" = 1, "Manual Input" = 2),
                     selected = 1),
                   numericInput("pdUpThresh", label = h5(""), value = 10000)
                 )
@@ -212,7 +212,7 @@ shinyUI(navbarPage("stm",
                 column(6,
                   radioButtons("pdVerbose", label = h5("verbose"),
                     choices = list("True" = T, "False" = F), selected = T)
-                )                
+                )
               )
             )
           ),
@@ -226,107 +226,94 @@ shinyUI(navbarPage("stm",
   ##### STM #####
   # **TODO**: Find sane limits for numericInputs
   tabPanel("Model",
-    titlePanel("Enter Parameters and Run STM model"),
-    fluidPage(
-      fluidRow(
-        column(10,
-          h3("stm")
-        ),
-        column(2,
-          actionButton('exportStm', "Export STM data")
-        )
-      ),
-      fluidRow(
-        column(5,
-          wellPanel(
-            #               fluidRow(
-            #                 column(6,
-            #                   radioButtons("stmChoice", label = h5("Choose data source"),
-            #                     choices = list("prepDocuments Output" = 1, "Uploaded Data" = 2), 
-            #                     selected = 1)
-            #                 )
-            #               ),
-            #               fluidRow(
-            #                 column(6,
-            #                   textInput('stmDocs', label = h5("documents"))
-            #                 ),
-            #                 column(6,
-            #                   textInput('stmVocab', label = h5("vocab"))
-            #                 )
-            #               ),
-            fluidRow(
-              column(6,
-                numericInput("stmK", label = h5("K"), value = 3)
-              ),
-              column(6,
-                textInput('stmPrev', label = h5("prevalence formula, include leading ~"), value = NULL)
-              )
-            ),
-            fluidRow(
-              column(6,
-                textInput('stmContent', label = h5("content"), value = NULL)
-              ),
-              column(6,
-                numericInput("stmSeed", label = h5("seed"), value = 94301)
-              )
-            ),
-            fluidRow(
-              column(6,
-                radioButtons("stmInitType", label = h5("init type"),
-                  choices = list("LDA" = "LDA", "Random" = "Random", "Spectral" = "Spectral"), selected = "LDA")
-              )
-            ),
-            fluidRow(
-              column(6,
-                numericInput("stmMaxEm", label = h5("max em iterations"), value = 10)
-              ),
-              column(6,
-                numericInput('stmEmTol', label = h5("emtol"), value = 0.00001, step = 0.00001)
-              )
-            ),
-            fluidRow(
-              column(6,
-                radioButtons("stmVerbose", label = h5("verbose"),
-                  choices = list("True" = T, "False" = F), selected = T)
-              ),
-              column(6,
-                numericInput("stmReportEvr", label = h5("report every"), value = 5)
-              )
-            ),
-            fluidRow(
-              column(6,
-                radioButtons("stmLdaBeta", label = h5("LDA Beta"),
-                  choices = list("True" = T, "False" = F), selected = T)
-              ),
-              column(6,
-                radioButtons("stmInteractions", label = h5("Interactions"),
-                  choices = list("True" = T, "False" = F), selected = T)
-              )
-            ),
-            fluidRow(
-              column(6,
-                numericInput("stmNgroups", label = h5("ngroups"), value = 5)
-              ),
-              column(6,
-                column(6,
-                  radioButtons("stmGamma", label = h5("Gamma Prior"),
-                    choices = list("Pooled" = "Pooled", "L1" = "L1"), selected = "Pooled")
-              )
-              )
-            ),
-            fluidRow(
-              column(12,
-                tags$hr(),
-                actionButton('stmRun', "Run STM")
-              )
-            )
-          )
-        ),
-        column(7,
-          verbatimTextOutput("stmprocresult")
-        )
-      )
-    )
+           titlePanel("Enter Parameters and Run STM model"),
+           fluidPage(
+             fluidRow(
+               column(10, h3("stm")),
+               column(2, actionButton("exportStm", "Export STM data"))
+             ),
+             fluidRow(
+               column(5,
+                      wellPanel(
+                        fluidRow(
+                          column(6, actionButton("stmRun", "Run STM")),
+                          column(6, actionButton('stmClearout', "Clear STM Output"))
+                        ),
+                        fluidRow(
+                          tags$hr(),
+                          column(6,  numericInput("stmK", label = h5("K"), value = 3)),
+                          column(6,
+                                 textInput("stmPrev", label = h5("prevalence formula, include leading ~"), value = NULL)
+                          )
+                        ),
+                        fluidRow(
+                          column(6,
+                                 textInput("stmContent", label = h5("content"), value = NULL)
+                          ),
+                          column(6,
+                                 numericInput("stmSeed", label = h5("seed"), value = NULL)
+                          )
+                        ),
+                        fluidRow(
+                          column(6,
+                                 radioButtons("stmInitType", label = h5("init type"),
+                                              choices = list("LDA" = "LDA", "Random" = "Random", "Spectral" = "Spectral"), selected = "LDA")
+                          )
+                        ),
+                        fluidRow(
+                          column(6,
+                                 numericInput("stmMaxEm", label = h5("max em iterations"), value = 10)
+                          ),
+                          column(6,
+                                 numericInput("stmEmTol", label = h5("emtol"), value = 0.00001, step = 0.00001)
+                          )
+                        ),
+                        fluidRow(
+                          column(6,
+                                 radioButtons("stmVerbose", label = h5("verbose"),
+                                              choices = list("True" = T, "False" = F), selected = T)
+                          ),
+                          column(6,
+                                 numericInput("stmReportEvr", label = h5("report every"), value = 1)
+                          )
+                        ),
+                        fluidRow(
+                          column(6,
+                                 radioButtons("stmLdaBeta", label = h5("LDA Beta"),
+                                              choices = list("True" = T, "False" = F), selected = T)
+                          ),
+                          column(6,
+                                 radioButtons("stmInteractions", label = h5("Interactions"),
+                                              choices = list("True" = T, "False" = F), selected = T)
+                          )
+                        ),
+                        fluidRow(
+                          column(6,
+                                 numericInput("stmNgroups", label = h5("ngroups"), value = 1)
+                          ),
+                          column(6,
+                                 radioButtons("stmGamma", label = h5("Gamma Prior"),
+                                              choices = list("Pooled" = "Pooled", "L1" = "L1"), selected = "Pooled")
+                          )
+                        ),
+                        fluidRow(
+                          column(6,
+                                 sliderInput("stmSigma", h5("Sigma Prior"),
+                                             min = 0, max = 1, value = 0, step = 0.01)
+                          ),
+                          column(6,
+                                 radioButtons("stmKappa", label = h5("Kappa Prior"),
+                                              choices = list("L1" = "L1", "Jeffreys" = "Jeffreys"),
+                                              selected = "L1")
+                          )
+                        )
+                      )
+               ),
+               column(7,
+                      verbatimTextOutput("stmprocresult")
+               )
+             )
+           )
   ),
   ##### Vizualizations #####
   navbarMenu("Plot",
@@ -334,7 +321,7 @@ shinyUI(navbarPage("stm",
       titlePanel("Choose options and plot the summary of an STM object"),
       fluidPage(
         fluidRow(
-          column(9, 
+          column(9,
             h3("plot.STM")
           )
         ),
@@ -344,7 +331,7 @@ shinyUI(navbarPage("stm",
               fluidRow(
                 column(12,
                   radioButtons("plotStmType", label = h5("type"),
-                    choices = list("summary" = "summary", "labels" = "labels", 
+                    choices = list("summary" = "summary", "labels" = "labels",
                       "perspectives" = "perspectives", "hist" = "hist"), selected = "summary")
                 )
               ),
@@ -353,19 +340,19 @@ shinyUI(navbarPage("stm",
                   numericInput('plotStmN', label = h5("n"), value = 3)
                 ),
                 column(6,
-                  textInput('plotStmTopics', 
-                    label = h5("topics, comma separated (e.g. 1,2)"), 
+                  textInput('plotStmTopics',
+                    label = h5("topics, comma separated (e.g. 1,2)"),
                     value = NULL)
                 )
               ),
               fluidRow(
                 column(6,
                   radioButtons("plotStmLabelType", label = h5("labeltype"),
-                    choices = list("prob" = "prob", "frex" = "frex", 
+                    choices = list("prob" = "prob", "frex" = "frex",
                       "lift" = "lift", "score" = "score"), selected = "prob")
                 ),
                 column(6,
-                  numericInput("plotStmFrexw", 
+                  numericInput("plotStmFrexw",
                     label = h5("frexw, only needed if frex is chosen for labeltype"),
                     value = 0.5, step = 0.1)
                 )
@@ -377,13 +364,13 @@ shinyUI(navbarPage("stm",
               ),
               fluidRow(
                 column(6,
-                  textInput("plotStmXLim", 
-                    label = h5("x-axis limits, comma separated (e.g -.1,.1)"), 
+                  textInput("plotStmXLim",
+                    label = h5("x-axis limits, comma separated (e.g -.1,.1)"),
                     value = NULL)
                 ),
                 column(6,
-                  textInput('plotStmYLim', 
-                    label = h5("y-axis limits, comma separated (e.g -10,10)"), 
+                  textInput('plotStmYLim',
+                    label = h5("y-axis limits, comma separated (e.g -10,10)"),
                     value = NULL)
                 )
               ),
@@ -410,7 +397,7 @@ shinyUI(navbarPage("stm",
       titlePanel("Generate a set of words describing each topic from an STM object"),
       fluidPage(
         fluidRow(
-          column(9, 
+          column(9,
             h3("labelTopics")
           )
         ),
@@ -419,19 +406,19 @@ shinyUI(navbarPage("stm",
             wellPanel(
               fluidRow(
                 column(6,
-                  textInput('labelTopicsTopics', 
-                    label = h5("topics, comma separated (e.g. 1,2)"), 
+                  textInput('labelTopicsTopics',
+                    label = h5("topics, comma separated (e.g. 1,2)"),
                     value = NULL)
                 ),
                 column(6,
-                  numericInput('labelTopicsN', 
-                    label = h5("n, number of words to label each topic"), 
+                  numericInput('labelTopicsN',
+                    label = h5("n, number of words to label each topic"),
                     value = 7)
                 )
               ),
               fluidRow(
                 column(6,
-                  numericInput("labelTopicsFrexw", 
+                  numericInput("labelTopicsFrexw",
                     label = h5("frexweight, a weight used in FREX scoring algorithm"),
                     value = 0.5, step = 0.1)
                 )
@@ -453,9 +440,7 @@ shinyUI(navbarPage("stm",
             plotOutput("labelTopicsPlot")
           )
         )
-      )  
+      )
     )
-#     tabPanel("findThoughts",
-#       "")
   )
 ))
