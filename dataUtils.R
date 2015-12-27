@@ -8,3 +8,11 @@ changeCsStringToDoubleVectorOrLeaveNull <- function(csString) {
     return(NULL)
   }
 }
+
+changeStringToLogical <- function(logicalString) {
+  if (logicalString) {
+    return(T)
+  } else {
+    return(F)
+  }
+}
