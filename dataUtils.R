@@ -16,3 +16,7 @@ changeStringToLogical <- function(logicalString) {
     return(F)
   }
 }
+
+errorForUi <- function(errorMessage) {
+  return(paste("ERROR:", errorMessage))
+}

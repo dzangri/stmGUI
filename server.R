@@ -5,7 +5,7 @@
 
 library(shiny)
 library(stm)
-# library(data.table)
+library(shinyjs)
 source("dataUtils.R")
 
 #### TEST CODE HERE ####
@@ -28,25 +28,50 @@ shinyServer(function(input, output, session) {
   storedData$prepdocs <- NULL
   storedData$stmresult <- NULL
 
-  ##### Input Data #####
-  # if input file is null, then return nothing
-  # otherwise, display data as a table (csv, tsv only)
+  ##### Data Upload #####
+  # Allow file upload and submission to be read by read.csv
+  # as the raw data in shiny
   # **TODO**: Expand file types that can be handled
-  observeEvent(input$filesettings, ({
-    userData <- input$upDatafile
-    if (is.null(userData)) {
-      output$dataOutputText <-
-        renderPrint({ "You must select a file to upload!"})
-      return(NULL)
-    }
 
-    # fread or read.csv
-    storedData$data <- read.csv(userData$datapath,
-                                header=input$header,
-                                sep=input$sep,
-                                quote=input$quote)
-    # fread(userData$datapath)
+  onclick("toggleAdvDataUpload", toggle(id = "advUploadOptions", anim = TRUE))
+  observe({
+    toggleState("submitDataForUpload", !is.null(input$dataFileToUpload))
+  })
+  observe({
+    toggleState("moveFromDataToProc", !is.null(storedData$data))
+  })
+  observeEvent(input$moveFromDataToProc, ({
+    updateTabsetPanel(session, "navBar", selected = "Processing")
+  }))
 
+  observeEvent(input$submitDataForUpload, ({
+    shinyjs::text("dataInputTextResult", "")
+
+    userData <- input$dataFileToUpload
+
+    withProgress( message = "Loading data, please wait...", {
+      setProgress(0.5)
+
+      tryCatch({
+        disable("moveFromStep1To2")
+        storedData$data <- read.csv(userData$datapath,
+          header=input$headerPresent,
+          sep=input$columnSeparator,
+          quote=input$quoteAroundData)
+      }, error=function(e) {
+        shinyjs::text("dataInputTextResult",
+          paste("ERROR: Error while reading data:", e, sep = "\n"))
+        storedData$data <- NULL
+        return(NULL)
+      }, warning=function(w) {
+        shinyjs::text("dataInputTextResult",
+          paste("WARNING: Warning while reading data:\n", w, sep = "\n"))
+        storedData$data <- NULL
+        return(NULL)
+      }, finally={})
+
+      setProgress(1)
+    })
     output$data <- DT::renderDataTable({
       DT::datatable(storedData$data)
     })
@@ -56,101 +81,143 @@ shinyServer(function(input, output, session) {
   # processes input to the Text Processor
   # selects gadarian or data that was input by the user
   # **TODO**: clear output without needing a button
-
-  observeEvent(input$tpClearout, ({
-    output$tpResult <- renderPrint({ invisible(NULL) })
+  onclick("toggleAdvTextProc", toggle(id = "advTextProcOptions", anim = TRUE))
+  observe({
+    toggleState("moveFromProcToStm", !is.null(storedData$prepdocs))
+  })
+  observeEvent(input$moveFromProcToStm, ({
+    updateTabsetPanel(session, "navBar", selected = "Model")
   }))
 
-  #### TEST ####
-  #  clearInputGivenEvent(input$tpClearout, output$tpResult)
-  ####
+  observe({
+    toggleState("tpProcessText",
+      input$tpGadarian == "gadar" || !is.null(storedData$data))
+  })
+  observeEvent(input$tpClearout, ({
+    shinyjs::text("tpTextResult", "")
+  }))
+  observe({
+    userData <- storedData$data
+    if (!is.null(userData)) {
+      enable("tpDocs")
+      dataColumnNames <- colnames(userData)
+      updateSelectInput(session, "tpDocs", choices = dataColumnNames)
+    } else {
+      disable("tpDocs")
+    }
+  })
 
-  observeEvent(input$tpTextprocess, ({
+  observe({
+    if (is.null(storedData$data)) {
+      updateRadioButtons(session,
+        "tpGadarian",
+        choices = list("Preloaded Gadarian Dataset" = "gadar", "Uploaded Data" = "upload"),
+        selected = "gadar" )
+    } else {
+      updateRadioButtons(session,
+        "tpGadarian",
+        choices = list("Preloaded Gadarian Dataset" = "gadar", "Uploaded Data" = "upload"),
+        selected = "upload" )
+    }
+  })
+
+  observeEvent(input$tpProcessText, ({
 
     docsForTp <- NULL
     metadataForTp <- NULL
     dataType <- NULL
 
-    if (input$tpGadarian == 1) {
+    if (input$tpGadarian == "gadar") {
       docsForTp <- gadarian$open.ended.response
       metadataForTp <- gadarian
       dataType <- "Gadarian"
     }
     else {
-      if (is.null(storedData$data)){
-        output$tpResult <- renderText({"You must upload data in the Data tab to use this option!"})
-        return(NULL)
-      }
-
       docs <- input$tpDocs
       docsForTp <- storedData$data[[docs]]
-
       metadataForTp <- storedData$data
       dataType <- "user"
     }
 
     if (!is.null(docsForTp)) {
       # **TODO**: Implement wordLengths, customstopwords, onlytxtfiles
-      shinyjs::text("tpResult", "Text Processor is running...")
-      withProgress( message = "Running Text Processor...", {
+      shinyjs::text("tpTextResult", "textProcessor is running...")
+      withProgress( message = "Running textProcessor, please wait...", {
         setProgress(0.5)
         tpOutputRaw <-
-          paste(
-            capture.output(
-              storedData$textprocess <- isolate(
-                textProcessor(documents=docsForTp,
-                              metadata=metadataForTp,
-                              lowercase=input$tpLowercase,
-                              removestopwords=input$tpRemovestop,
-                              removenumbers=input$tpRemovenum,
-                              removepunctuation=input$tpRemovepunc,
-                              stem=input$tpStem,
-                              wordLengths=c(3, Inf),
-                              sparselevel=input$tpSparselevel,
-                              language=input$tpLang,
-                              verbose=input$tpVerbose,
-                              onlycharacter=input$tpOnlychar,
-                              striphtml=input$tpStriphtml,
-                              customstopwords=NULL,
-                              onlytxtfiles=TRUE)
-              )
-            ), collapse = "\n")
-        setProgress(1)
+          tryCatch({
+            paste(
+              capture.output(
+                storedData$textprocess <- isolate(
+                  textProcessor(documents=docsForTp,
+                    metadata=metadataForTp,
+                    lowercase=input$tpLowercase,
+                    removestopwords=input$tpRemovestop,
+                    removenumbers=input$tpRemovenum,
+                    removepunctuation=input$tpRemovepunc,
+                    stem=input$tpStem,
+                    wordLengths=c(3, Inf),
+                    sparselevel=input$tpSparselevel,
+                    language=input$tpLang,
+                    onlycharacter=input$tpOnlychar,
+                    striphtml=input$tpStriphtml,
+                    customstopwords=NULL,
+                    onlytxtfiles=TRUE)
+                )
+              ), collapse = "\n")
+          }, error=function(e) {
+            errorMessage <-
+              paste(errorForUi("Error while running textProcessor:"), e, sep = "\n")
+            storedData$textprocess <- NULL
+            return(errorMessage)
+          }, warning=function(w) {
+            warningMessage <-
+              paste("WARNING: Warning while running textProcessor:", w, sep = "\n")
+            storedData$textprocess <- NULL
+            return(warningMessage)
+          }, finally={
+            setProgress(1)
+          })
       })
-      shinyjs::text("tpResult", tpOutputRaw)
-      if (length(storedData$textprocess$vocab) > 0) {
-        doneAlert = sprintf("\nDone processing %s data!", dataType)
-        shinyjs::text("tpResult", doneAlert, TRUE)
+      if (!is.null(storedData$textprocess)) {
+        if (length(storedData$textprocess$vocab) > 0) {
+          doneAlert <- sprintf("Done processing %s data!", dataType)
+          completeMessage <- paste(tpOutputRaw, doneAlert, sep = "\n")
+          shinyjs::text("tpTextResult", completeMessage)
+        } else {
+          shinyjs::text("tpTextResult", errorForUi(
+            paste("textProcessor did not complete correctly! This occurred because",
+              "the output of textProcessor contained a vocab size of 0! Perhaps you entered a",
+              "nontextual data column as the choice for documents?")))
+        }
       } else {
-        shinyjs::text("tpResult", "Text processor did not complete correctly!")
+        shinyjs::text("tpTextResult", tpOutputRaw)
       }
     } else {
-      shinyjs::text("tpResult", "Try again with column name of the document vector!")
+      shinyjs::text("tpTextResult", errorForUi("Try again with column name of the document vector!"))
     }
   }))
 
   ##### Plot Removed #####
-  # **TODO**: Decide of more edge/bad cases for input?
 
-  # **TODO**: Clearing should be one command? Two?
   observeEvent(input$prClearout, ({
-    output$prOutput <- renderPrint({ invisible(NULL) })
-    output$prPlot <- renderPlot({ invisible(NULL) })
+    shinyjs::text("prTextResult", "")
+    output$prPlotOutput <- renderPlot({ invisible(NULL) })
   }))
 
   observeEvent(input$prRun, ({
     if (is.null(storedData$textprocess)) {
-      shinyjs::text("prOutput", "You must successfully run Text Processor!")
+      shinyjs::text("prTextResult", "You must successfully run textProcessor!")
       return(NULL)
     }
 
     plotRevDocs <- storedData$textprocess$documents
 
-    output$prPlot <- renderPlot(
+    output$prPlotOutput <- renderPlot(
       isolate(
         plotRemoved(plotRevDocs, lower.thresh = seq(from = input$plotLowThresh,
-                                                    to = input$plotUpThresh,
-                                                    by = input$plotInterval)
+          to = input$plotUpThresh,
+          by = input$plotInterval)
         )
       )
     )
@@ -165,7 +232,7 @@ shinyServer(function(input, output, session) {
   observe({
     pdUpThreshType <- input$pdUpThreshChoice
 
-    if (pdUpThreshType == 1) {
+    if (pdUpThreshType == "inf") {
       updateNumericInput(session, 'pdUpThresh', value = Inf )
     } else {
       updateNumericInput(session, 'pdUpThresh', value = 10000 )
@@ -173,93 +240,139 @@ shinyServer(function(input, output, session) {
   })
 
   observeEvent(input$pdClearout, ({
-    output$prepdocresults <- renderPrint({ invisible(NULL) })
+    shinyjs::text("pdTextResult", "")
   }))
 
   observeEvent(input$pdPrepdocs, ({
 
     if (is.null(storedData$textprocess)) {
-      output$prepdocresults <- renderPrint({ "You must successfully run Text Processor!"})
+      shinyjs::text("pdTextResult", "You must successfully run textProcessor!")
       return(NULL)
     }
 
     upperThresh <- Inf
-
-    if (input$pdUpThreshChoice > 1) {
+    if (input$pdUpThreshChoice == "manual") {
       upperThresh <- input$pdUpThresh
     }
 
     tpres <- storedData$textprocess
 
-    shinyjs::text("prepdocresults", "Running Prep Documents...")
-    withProgress( message = "Preparing Documents...", {
+    shinyjs::text("pdTextResult", "Running Prep Documents...")
+    withProgress( message = "Running prepDocuments, please wait...", {
       setProgress(0.5)
       pdOutputRaw <-
-        paste(
-          capture.output(
-            storedData$prepdocs <- isolate(
-              prepDocuments(documents=tpres$documents,
-                            vocab=tpres$vocab,
-                            meta=tpres$meta,
-                            lower.thresh=input$pdLowThresh,
-                            upper.thresh=upperThresh,
-                            subsample=NULL,
-                            verbose=input$pdVerbose)
-            )
-          ), collapse = "\n")
-      setProgress(1)
+        tryCatch({
+          paste(
+            capture.output(
+              storedData$prepdocs <- isolate(
+                prepDocuments(documents=tpres$documents,
+                  vocab=tpres$vocab,
+                  meta=tpres$meta,
+                  lower.thresh=input$pdLowThresh,
+                  upper.thresh=upperThresh,
+                  subsample=NULL)
+              )
+            ), collapse = "\n")
+        }, error=function(e) {
+          errorMessage <-
+            paste(errorForUi("Error while running prepDocuments:"), e, sep = "\n")
+          storedData$prepdocs <- NULL
+          return(errorMessage)
+        }, warning=function(w) {
+          warningMessage <-
+            paste("WARNING: Warning while running prepdocuments:", w, sep = "\n")
+          storedData$prepdocs <- NULL
+          return(warningMessage)
+        }, finally={
+          setProgress(1)
+        })
     })
-    shinyjs::text("prepdocresults", pdOutputRaw)
+    shinyjs::text("pdTextResult", pdOutputRaw)
   }))
 
   ##### STM #####
+  observeEvent(input$stmClearout, ({
+    shinyjs::text("stmTextResult", "")
+  }))
 
   observeEvent(input$stmRun, ({
 
     pdres <- storedData$prepdocs
-
     if(is.null(pdres)) {
-      output$stmprocresult <-
-        renderPrint({ "You must successfully run Prep Documents!" })
+      shinyjs::text("stmTextResult", "You must successfully run Prep Documents!")
       return(NULL)
     }
 
-    shinyjs::text("stmprocresult", "Generating STM model...")
-    withProgress( message = "Running STM model generation...", {
+    stmArgs <- list()
+
+    if(is.null(input$stmK)) {
+      shinyjs::text("stmTextResult", "K is blank!")
+      return(NULL)
+    }
+
+    shinyjs::text("stmTextResult", "Generating STM model...")
+
+    stmArgs <-
+      list(documents=pdres$documents,
+        vocab=pdres$vocab,
+        K=input$stmK,
+        data=pdres$meta,
+        init.type=input$stmInitType,
+        max.em.its=input$stmMaxEm,
+        emtol=input$stmEmTol,
+        reportevery=input$stmReportEvr,
+        LDAbeta=changeStringToLogical(input$stmLdaBeta),
+        interactions=changeStringToLogical(input$stmInteractions),
+        ngroups=input$stmNgroups,
+        gamma.prior=input$stmGamma,
+        sigma.prior=input$stmSigma,
+        kappa.prior=input$stmKappa)
+
+    prevString <- input$stmPrev
+    if (prevString != "") {
+      try(append(stmArgs, c(prevalence=formula(prevString))))
+    }
+
+    if (!is.null(input$stmSeed)) {
+      append(stmArgs, c(seed=input$stmSeed))
+    }
+
+    contentString <- input$stmContent
+    if (contentString != "") {
+      try(append(stmArgs, c(prevalence=formula(contentString))))
+    }
+
+    withProgress( message = "Generating STM model, please wait...", {
       setProgress(0.5)
       stmOutputRaw <-
-        paste(
-          capture.output(
-            # TODO: Implement content
-            storedData$stmresult <- isolate(
-              stm(documents=pdres$documents,
-                  vocab=pdres$vocab,
-                  K=input$stmK,
-                  prevalence=formula(input$stmPrev),
-                  data=pdres$meta,
-                  init.type=input$stmInitType,
-                  seed=input$stmSeed,
-                  max.em.its=input$stmMaxEm,
-                  emtol=input$stmEmTol,
-                  verbose=changeStringToLogical(input$stmVerbose),
-                  reportevery=input$stmReportEvr,
-                  LDAbeta=changeStringToLogical(input$stmLdaBeta),
-                  interactions=changeStringToLogical(input$stmInteractions),
-                  ngroups = input$stmNgroups,
-                  gamma.prior=input$stmGamma,
-                  sigma.prior=input$stmSigma,
-                  kappa.prior=input$stmKappa)
-            )
-          ), collapse = "\n")
-      setProgress(1)
+        tryCatch({
+          paste(
+            capture.output(
+              isolate(
+                storedData$stmresult <- do.call(stm, stmArgs)
+              )
+            ), collapse = "\n")
+        }, error=function(e) {
+          errorMessage <-
+            paste(errorForUi("Error while running stm:"), e, sep = "\n")
+          storedData$stmresult <- NULL
+          return(errorMessage)
+        }, warning=function(w) {
+          warningMessage <-
+            paste("WARNING: Warning while running stm:", w, sep = "\n")
+          storedData$stmresult <- NULL
+          return(warningMessage)
+        }, finally={
+          setProgress(1)
+        })
     })
-    shinyjs::text("stmprocresult", stmOutputRaw)
+    shinyjs::text("stmTextResult", stmOutputRaw)
   }))
 
   observeEvent(input$exportStm, ({
     stmObj <- storedData$stmresult
     if (is.null(stmObj)) {
-      output$stmprocresult <- renderPrint({ "You must successfully run STM before saving!" })
+      shinyjs::text("stmTextResult", "You must successfully run STM before saving!")
       return(NULL)
     }
 
@@ -304,14 +417,14 @@ shinyServer(function(input, output, session) {
     output$plotStmPlot <- renderPlot({
       isolate(
         plot.STM(stmObj,
-                 type=input$plotStmType,
-                 n=input$plotStmN,
-                 topics=tops,
-                 labeltype=input$plotStmLabelType,
-                 frexw=input$plotStmFrexw,
-                 main=input$plotStmMain,
-                 xlim=plotXLim,
-                 ylim=plotYLim)
+          type=input$plotStmType,
+          n=input$plotStmN,
+          topics=tops,
+          labeltype=input$plotStmLabelType,
+          frexw=input$plotStmFrexw,
+          main=input$plotStmMain,
+          xlim=plotXLim,
+          ylim=plotYLim)
       )
     })
   }))
@@ -329,9 +442,9 @@ shinyServer(function(input, output, session) {
     output$labelTopicsOut <- renderPrint({
       isolate(
         labelTopics(stmObj,
-                    n=input$labelTopicsN,
-                    topics=tops,
-                    frexweight=input$labelTopicsFrexw)
+          n=input$labelTopicsN,
+          topics=tops,
+          frexweight=input$labelTopicsFrexw)
       )
     })
   }))
