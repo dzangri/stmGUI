@@ -27,19 +27,20 @@ shinyUI(tagList(
           column(5,
             wellPanel(
               div(id = "fileUploadOptionBar",
+                br(),
                 fileInput("dataFileToUpload", "Choose Data File To Upload"),
                 actionButton("submitDataForUpload", "Submit"),
                 hr(),
                 a(id = "toggleAdvDataUpload", "Show/hide advanced options"),
                 shinyjs::hidden(
                   div(id = "advUploadOptions",
-                    checkboxInput("headerPresent", "Header", TRUE),
-                    radioButtons("columnSeparator", "Separator",
+                    checkboxInput("headerPresent", "Header Row Present", TRUE),
+                    radioButtons("columnSeparator", "Separator Between Items In A Row",
                       c(Comma=",",
                         Semicolon=";",
                         Tab="\t"),
                       ","),
-                    radioButtons("quoteAroundData", "Quote",
+                    radioButtons("quoteAroundData", "Quote Around Data",
                       c(None="",
                         "Double Quote"='"',
                         "Single Quote"="'"),
@@ -81,70 +82,75 @@ shinyUI(tagList(
                 )
               ),
               fluidRow(
-                tags$hr(),
+                hr(),
                 column(12,
-                  radioButtons("tpGadarian", label = h5("Choose textProcessor Datasource"),
+                  radioButtons("tpGadarian",
+                    label = "Choose textProcessor Datasource",
                     choices = list("Preloaded Gadarian Dataset" = "gadar", "Uploaded Data" = "upload"),
                     selected = "gadar")
                 )
               ),
               fluidRow(
                 column(12,
-                  selectInput("tpDocs", label = h5("Name of column containing text documents"), choices = c())
+                  selectInput("tpDocs", "Name of column containing text documents", c())
                 )
               ),
               hr(),
               a(id = "toggleAdvTextProc", "Show/hide advanced options"),
               shinyjs::hidden(
                 div(id = "advTextProcOptions",
+                  br(),
                   fluidRow(
                     column(6,
-                      radioButtons("tpLowercase", label = h5("lowercase"),
+                      radioButtons("tpLowercase", label = "lowercase",
                         choices = list("True" = T, "False" = F), selected = T)
                     ),
                     column(6,
-                      radioButtons("tpRemovestop", label = h5("remove stop words"),
+                      radioButtons("tpRemovestop", label = "remove stop words",
                         choices = list("True" = T, "False" = F), selected = T)
                     )
                   ),
                   fluidRow(
                     column(6,
-                      radioButtons("tpRemovenum", label = h5("remove numbers"),
+                      radioButtons("tpRemovenum", label = "remove numbers",
                         choices = list("True" = T, "False" = F), selected = T)
                     ),
                     column(6,
-                      radioButtons("tpRemovepunc", label = h5("remove punctuation"),
+                      radioButtons("tpRemovepunc", label = "remove punctuation",
                         choices = list("True" = T, "False" = F), selected = T)
                     )
                   ),
                   fluidRow(
                     column(6,
-                      radioButtons("tpStem", label = h5("stem"),
+                      radioButtons("tpStem", label = "stem",
                         choices = list("True" = T, "False" = F), selected = T)
                     ),
                     column(6,
-                      sliderInput("tpSparselevel", h5("sparselevel"),
+                      sliderInput("tpSparselevel", "sparselevel",
                         min = 0, max = 1, value = 1, step = 0.05)
                     )
                   ),
                   fluidRow(
-                    column(6,
-                      textInput('tpLang', label = h5("language"), value = "en")
+                    column(12,
+                      selectInput("tpLang",
+                        label = "language",
+                        choices = SnowballC::getStemLanguages(),
+                        selected = "english")
                     )
                   ),
                   fluidRow(
                     column(6,
-                      radioButtons("tpOnlychar", label = h5("only character"),
+                      radioButtons("tpOnlychar", label = "only character",
                         choices = list("True" = T, "False" = F), selected = F)
                     ),
                     column(6,
-                      radioButtons("tpStriphtml", label = h5("strip html"),
+                      radioButtons("tpStriphtml", label = "strip html",
                         choices = list("True" = T, "False" = F), selected = F)
                     )
                   ),
                   fluidRow(
                     column(12,
-                      textInput('tpCustomstop', label = h5("custom stopwords"), value = NULL)
+                      textInput('tpCustomstop', label = "custom stopwords", value = NULL)
                     )
                   )
                 )
@@ -169,16 +175,16 @@ shinyUI(tagList(
               fluidRow(
                 column(6,
                   tags$hr(),
-                  numericInput("plotLowThresh", label = h5("lower thresh"), value = 1)
+                  numericInput("plotLowThresh", label = "lower thresh", value = 1)
                 ),
                 column(6,
                   tags$hr(),
-                  numericInput("plotUpThresh", label = h5("upper thresh"), value = 200)
+                  numericInput("plotUpThresh", label = "upper thresh", value = 200)
                 )
               ),
               fluidRow(
                 column(6,
-                  numericInput("plotInterval", label = h5("interval"), value = 1)
+                  numericInput("plotInterval", label = "interval", value = 1)
                 )
               )
             )
@@ -198,28 +204,27 @@ shinyUI(tagList(
             wellPanel(
               fluidRow(
                 column(6,
-                  actionButton('pdPrepdocs', "Prep Documents")
+                  actionButton("pdPrepdocs", "Prep Documents")
                 ),
-                # **TODO**: Decide if 'Clear Output' is too vague, since just referring to output text
                 column(6,
-                  actionButton('pdClearout', "Clear Output")
+                  actionButton("pdClearout", "Clear Output")
                 )
               ),
               fluidRow(
                 tags$hr(),
                 column(6,
-                  numericInput("pdLowThresh", label = h5("lower thresh"), value = 1)
+                  numericInput("pdLowThresh", label = "lower thresh", value = 1)
                 ),
                 column(6,
-                  radioButtons("pdUpThreshChoice", label = h5("Upper Thresh"),
+                  radioButtons("pdUpThreshChoice", label = "upper thresh",
                     choices = list("Inf" = "inf", "Manual Input" = "manual"),
                     selected = "inf"),
-                  numericInput("pdUpThresh", label = h5(""), value = Inf)
+                  numericInput("pdUpThresh", "", value = Inf)
                 )
               ),
               fluidRow(
                 column(6,
-                  numericInput("pdSubsample", label = h5("subsample"), value = NULL)
+                  numericInput("pdSubsample", label = "subsample", value = NULL)
                 )
               )
             )
@@ -232,11 +237,15 @@ shinyUI(tagList(
     ),
     ##### STM #####
     tabPanel("Model",
-      titlePanel("Step 3: Run STM model"),
       fluidPage(
         fluidRow(
-          column(10, h3("stm"))
-      #    column(2, actionButton("exportStm", "Export STM data"))
+          column(12,
+            titlePanel("Step 3: Run STM model")
+          )
+        ),
+        fluidRow(
+          column(12, titlePanel("stm"))
+          #    column(2, actionButton("exportStm", "Export STM data"))
         ),
         fluidRow(
           column(5,
@@ -247,67 +256,76 @@ shinyUI(tagList(
               ),
               fluidRow(
                 tags$hr(),
-                column(6,  numericInput("stmK", label = h5("K"), value = NULL)),
+                column(6,  numericInput("stmK", label = "K", value = NULL)),
                 column(6,
-                  textInput("stmPrev", label = h5("prevalence formula, include leading ~"))
+                  numericInput("stmSeed", label = "seed", value = NULL)
                 )
               ),
               fluidRow(
                 column(6,
-                  textInput("stmContent", label = h5("content"))
+                  textInput("stmContent", label = "content formula\n(include leading ~)")
                 ),
                 column(6,
-                  numericInput("stmSeed", label = h5("seed"), value = NULL)
+                  textInput("stmPrev", label = "prevalence formula\n(include leading ~)")
                 )
               ),
               fluidRow(
-                column(6,
-                  radioButtons("stmInitType", label = h5("init type"),
+                column(12,
+                  radioButtons("stmInitType",
+                    label = "init type",
                     choices = list("LDA" = "LDA", "Random" = "Random", "Spectral" = "Spectral"),
+                    inline = T,
                     selected = "LDA")
                 )
               ),
-              fluidRow(
-                column(6,
-                  numericInput("stmMaxEm", label = h5("max em iterations"), value = 100)
-                ),
-                column(6,
-                  numericInput("stmEmTol", label = h5("emtol"), value = 0.00001, step = 0.00001)
-                )
-              ),
-              fluidRow(
-                column(6,
-                  numericInput("stmReportEvr", label = h5("report every"), value = 1)
-                )
-              ),
-              fluidRow(
-                column(6,
-                  radioButtons("stmLdaBeta", label = h5("LDA Beta"),
-                    choices = list("True" = T, "False" = F), selected = T)
-                ),
-                column(6,
-                  radioButtons("stmInteractions", label = h5("Interactions"),
-                    choices = list("True" = T, "False" = F), selected = T)
-                )
-              ),
-              fluidRow(
-                column(6,
-                  numericInput("stmNgroups", label = h5("ngroups"), value = 1)
-                ),
-                column(6,
-                  radioButtons("stmGamma", label = h5("Gamma Prior"),
-                    choices = list("Pooled" = "Pooled", "L1" = "L1"), selected = "Pooled")
-                )
-              ),
-              fluidRow(
-                column(6,
-                  sliderInput("stmSigma", h5("Sigma Prior"),
-                    min = 0, max = 1, value = 0, step = 0.01)
-                ),
-                column(6,
-                  radioButtons("stmKappa", label = h5("Kappa Prior"),
-                    choices = list("L1" = "L1", "Jeffreys" = "Jeffreys"),
-                    selected = "L1")
+              hr(),
+              a(id = "toggleAdvStm", "Show/hide advanced options"),
+              shinyjs::hidden(
+                div(id = "advStmOptions",
+                  br(),
+                  fluidRow(
+                    column(6,
+                      numericInput("stmMaxEm", label = "max em iterations", value = 100)
+                    ),
+                    column(6,
+                      numericInput("stmEmTol", label = "emtol", value = 0.00001, step = 0.00001)
+                    )
+                  ),
+                  fluidRow(
+                    column(6,
+                      numericInput("stmReportEvr", label = "report every", value = 1)
+                    ),
+                    column(6,
+                      radioButtons("stmLdaBeta", label = "LDA Beta",
+                        choices = list("True" = T, "False" = F), selected = T)
+                    )
+                  ),
+                  fluidRow(
+                    column(6,
+                      numericInput("stmNgroups", label = "ngroups", value = 1)
+                    ),
+                    column(6,
+                      radioButtons("stmInteractions", label = "Interactions",
+                        choices = list("True" = T, "False" = F), selected = T)
+                    )
+                  ),
+                  fluidRow(
+                    column(6,
+                      radioButtons("stmKappa", label = "Kappa Prior",
+                        choices = list("L1" = "L1", "Jeffreys" = "Jeffreys"),
+                        selected = "L1")
+                    ),
+                    column(6,
+                      radioButtons("stmGamma", label = "Gamma Prior",
+                        choices = list("Pooled" = "Pooled", "L1" = "L1"), selected = "Pooled")
+                    )
+                  ),
+                  fluidRow(
+                    column(12,
+                      sliderInput("stmSigma", "Sigma Prior",
+                        min = 0, max = 1, value = 0, step = 0.01)
+                    )
+                  )
                 )
               )
             )
@@ -331,47 +349,47 @@ shinyUI(tagList(
               wellPanel(
                 fluidRow(
                   column(12,
-                    radioButtons("plotStmType", label = h5("type"),
+                    radioButtons("plotStmType", label = "type",
                       choices = list("summary" = "summary", "labels" = "labels",
                         "perspectives" = "perspectives", "hist" = "hist"), selected = "summary")
                   )
                 ),
                 fluidRow(
                   column(6,
-                    numericInput('plotStmN', label = h5("n"), value = 3)
+                    numericInput('plotStmN', label = "n", value = 3)
                   ),
                   column(6,
                     textInput('plotStmTopics',
-                      label = h5("topics, comma separated (e.g. 1,2)"),
+                      label = "topics, comma separated (e.g. 1,2)",
                       value = NULL)
                   )
                 ),
                 fluidRow(
                   column(6,
-                    radioButtons("plotStmLabelType", label = h5("labeltype"),
+                    radioButtons("plotStmLabelType", label = "labeltype",
                       choices = list("prob" = "prob", "frex" = "frex",
                         "lift" = "lift", "score" = "score"), selected = "prob")
                   ),
                   column(6,
                     numericInput("plotStmFrexw",
-                      label = h5("frexw, only needed if frex is chosen for labeltype"),
+                      label = "frexw, only needed if frex is chosen for labeltype",
                       value = 0.5, step = 0.1)
                   )
                 ),
                 fluidRow(
                   column(12,
-                    textInput("plotStmMain", label = h5("main (title)"), value = NULL)
+                    textInput("plotStmMain", label = "main (title)", value = NULL)
                   )
                 ),
                 fluidRow(
                   column(6,
                     textInput("plotStmXLim",
-                      label = h5("x-axis limits, comma separated (e.g -.1,.1)"),
+                      label = "x-axis limits, comma separated (e.g -.1,.1)",
                       value = NULL)
                   ),
                   column(6,
                     textInput('plotStmYLim',
-                      label = h5("y-axis limits, comma separated (e.g -10,10)"),
+                      label = "y-axis limits, comma separated (e.g -10,10)",
                       value = NULL)
                   )
                 ),
@@ -408,19 +426,19 @@ shinyUI(tagList(
                 fluidRow(
                   column(6,
                     textInput('labelTopicsTopics',
-                      label = h5("topics, comma separated (e.g. 1,2)"),
+                      label = "topics, comma separated (e.g. 1,2)",
                       value = NULL)
                   ),
                   column(6,
                     numericInput('labelTopicsN',
-                      label = h5("n, number of words to label each topic"),
+                      label = "n, number of words to label each topic",
                       value = 7)
                   )
                 ),
                 fluidRow(
                   column(6,
                     numericInput("labelTopicsFrexw",
-                      label = h5("frexweight, a weight used in FREX scoring algorithm"),
+                      label = "frexweight, a weight used in FREX scoring algorithm",
                       value = 0.5, step = 0.1)
                   )
                 ),
