@@ -67,170 +67,180 @@ shinyUI(tagList(
           )
         ),
         ##### Text Processor #####
-        fluidRow(
-          column(12, titlePanel("textProcessor"))
-        ),
-        fluidRow(
-          column(5,
-            wellPanel(
-              fluidRow(
-                column(6,
-                  actionButton('tpProcessText', "Process Text")
-                ),
-                column(6,
-                  actionButton('tpClearout', "Clear Output")
-                )
-              ),
-              fluidRow(
-                hr(),
-                column(12,
-                  radioButtons("tpGadarian",
-                    label = "Choose textProcessor Datasource",
-                    choices = list("Preloaded Gadarian Dataset" = "gadar", "Uploaded Data" = "upload"),
-                    selected = "gadar")
-                )
-              ),
-              fluidRow(
-                column(12,
-                  selectInput("tpDocs", "Name of column containing text documents", c())
-                )
-              ),
-              hr(),
-              a(id = "toggleAdvTextProc", "Show/hide advanced options"),
-              shinyjs::hidden(
-                div(id = "advTextProcOptions",
-                  br(),
+        tabsetPanel(id = "processingPanel",
+          tabPanel("textProcessor",
+            fluidRow(
+              column(12, titlePanel("textProcessor"))
+            ),
+            fluidRow(
+              column(5,
+                wellPanel(
                   fluidRow(
                     column(6,
-                      radioButtons("tpLowercase", label = "lowercase",
-                        choices = list("True" = T, "False" = F), selected = T)
+                      actionButton('tpProcessText', "Process Text")
                     ),
                     column(6,
-                      radioButtons("tpRemovestop", label = "remove stop words",
-                        choices = list("True" = T, "False" = F), selected = T)
+                      actionButton('tpClearout', "Clear Output")
                     )
                   ),
                   fluidRow(
-                    column(6,
-                      radioButtons("tpRemovenum", label = "remove numbers",
-                        choices = list("True" = T, "False" = F), selected = T)
-                    ),
-                    column(6,
-                      radioButtons("tpRemovepunc", label = "remove punctuation",
-                        choices = list("True" = T, "False" = F), selected = T)
-                    )
-                  ),
-                  fluidRow(
-                    column(6,
-                      radioButtons("tpStem", label = "stem",
-                        choices = list("True" = T, "False" = F), selected = T)
-                    ),
-                    column(6,
-                      sliderInput("tpSparselevel", "sparselevel",
-                        min = 0, max = 1, value = 1, step = 0.05)
+                    hr(),
+                    column(12,
+                      radioButtons("tpGadarian",
+                        label = "Choose textProcessor Datasource",
+                        choices = list("Preloaded Gadarian Dataset" = "gadar", "Uploaded Data" = "upload"),
+                        selected = "gadar")
                     )
                   ),
                   fluidRow(
                     column(12,
-                      selectInput("tpLang",
-                        label = "language",
-                        choices = SnowballC::getStemLanguages(),
-                        selected = "english")
+                      selectInput("tpDocs", "Name of column containing text documents", c())
                     )
                   ),
-                  fluidRow(
-                    column(6,
-                      radioButtons("tpOnlychar", label = "only character",
-                        choices = list("True" = T, "False" = F), selected = F)
-                    ),
-                    column(6,
-                      radioButtons("tpStriphtml", label = "strip html",
-                        choices = list("True" = T, "False" = F), selected = F)
-                    )
-                  ),
-                  fluidRow(
-                    column(12,
-                      textInput('tpCustomstop', label = "custom stopwords", value = NULL)
+                  hr(),
+                  a(id = "toggleAdvTextProc", "Show/hide advanced options"),
+                  shinyjs::hidden(
+                    div(id = "advTextProcOptions",
+                      br(),
+                      fluidRow(
+                        column(6,
+                          radioButtons("tpLowercase", label = "lowercase",
+                            choices = list("True" = T, "False" = F), selected = T)
+                        ),
+                        column(6,
+                          radioButtons("tpRemovestop", label = "remove stop words",
+                            choices = list("True" = T, "False" = F), selected = T)
+                        )
+                      ),
+                      fluidRow(
+                        column(6,
+                          radioButtons("tpRemovenum", label = "remove numbers",
+                            choices = list("True" = T, "False" = F), selected = T)
+                        ),
+                        column(6,
+                          radioButtons("tpRemovepunc", label = "remove punctuation",
+                            choices = list("True" = T, "False" = F), selected = T)
+                        )
+                      ),
+                      fluidRow(
+                        column(6,
+                          radioButtons("tpStem", label = "stem",
+                            choices = list("True" = T, "False" = F), selected = T)
+                        ),
+                        column(6,
+                          sliderInput("tpSparselevel", "sparselevel",
+                            min = 0, max = 1, value = 1, step = 0.05)
+                        )
+                      ),
+                      fluidRow(
+                        column(12,
+                          selectInput("tpLang",
+                            label = "language",
+                            choices = SnowballC::getStemLanguages(),
+                            selected = "english")
+                        )
+                      ),
+                      fluidRow(
+                        column(6,
+                          radioButtons("tpOnlychar", label = "only character",
+                            choices = list("True" = T, "False" = F), selected = F)
+                        ),
+                        column(6,
+                          radioButtons("tpStriphtml", label = "strip html",
+                            choices = list("True" = T, "False" = F), selected = F)
+                        )
+                      ),
+                      fluidRow(
+                        column(12,
+                          textInput('tpCustomstop', label = "custom stopwords", value = NULL)
+                        )
+                      )
                     )
                   )
                 )
-              )
-            )
-          ),
-          column(7,
-            verbatimTextOutput("tpTextResult")
-          )
-        ),
-        ##### Plot Removed #####
-        fluidRow(
-          column(12, titlePanel("plotRemoved"))
-        ),
-        fluidRow(
-          column(5,
-            wellPanel(
-              fluidRow(
-                column(6, actionButton("prRun", "Run plotRemove")),
-                column(6, actionButton("prClearout", "Clear Output"))
               ),
-              fluidRow(
-                column(6,
-                  tags$hr(),
-                  numericInput("plotLowThresh", label = "lower thresh", value = 1)
-                ),
-                column(6,
-                  tags$hr(),
-                  numericInput("plotUpThresh", label = "upper thresh", value = 200)
-                )
-              ),
-              fluidRow(
-                column(6,
-                  numericInput("plotInterval", label = "interval", value = 1)
+              column(7,
+                verbatimTextOutput("tpTextResult"),
+                plotOutput("prPlotOutput", height = "350px"),
+                div(style = "align : center;",
+                  sliderInput("prPlotRange", "Range:",
+                    min = 1, max = 1000, value = c(1,200), width = "100%")
                 )
               )
             )
+            ##### Plot Removed #####
+#             fluidRow(
+#               column(12, titlePanel("plotRemoved"))
+#             ),
+#             fluidRow(
+#               column(5,
+#                 wellPanel(
+#                   fluidRow(
+#                     column(6, actionButton("prRun", "Run plotRemove")),
+#                     column(6, actionButton("prClearout", "Clear Output"))
+#                   ),
+#                   fluidRow(
+#                     column(6,
+#                       tags$hr(),
+#                       numericInput("plotLowThresh", label = "lower thresh", value = 1)
+#                     ),
+#                     column(6,
+#                       tags$hr(),
+#                       numericInput("plotUpThresh", label = "upper thresh", value = 200)
+#                     )
+#                   ),
+#                   fluidRow(
+#                     column(6,
+#                       numericInput("plotInterval", label = "interval", value = 1)
+#                     )
+#                   )
+#                 )
+#               ),
+#               column(7,
+#                 verbatimTextOutput("prTextResult"),
+#                 plotOutput("prPlotOutput", height = "350px")
+#               )
+#             )
           ),
-          column(7,
-            verbatimTextOutput("prTextResult"),
-            plotOutput("prPlotOutput", height = "350px")
-          )
-        ),
-        ##### Prep Documents #####
-        # **TODO**: Support user input that is prepdoc ready?
-        fluidRow(
-          column(12, titlePanel("prepDocuments"))
-        ),
-        fluidRow(
-          column(5,
-            wellPanel(
-              fluidRow(
-                column(6,
-                  actionButton("pdPrepdocs", "Prep Documents")
-                ),
-                column(6,
-                  actionButton("pdClearout", "Clear Output")
+          ##### Prep Documents #####
+          tabPanel("prepDocuments",
+            fluidRow(
+              column(12, titlePanel("prepDocuments"))
+            ),
+            fluidRow(
+              column(5,
+                wellPanel(
+                  fluidRow(
+                    column(6,
+                      actionButton("pdPrepdocs", "Prep Documents")
+                    ),
+                    column(6,
+                      actionButton("pdClearout", "Clear Output")
+                    )
+                  ),
+                  fluidRow(
+                    tags$hr(),
+                    column(6,
+                      numericInput("pdLowThresh", label = "lower thresh", value = 1)
+                    ),
+                    column(6,
+                      radioButtons("pdUpThreshChoice", label = "upper thresh",
+                        choices = list("Inf" = "inf", "Manual Input" = "manual"),
+                        selected = "inf"),
+                      numericInput("pdUpThresh", "", value = Inf)
+                    )
+                  ),
+                  fluidRow(
+                    column(6,
+                      numericInput("pdSubsample", label = "subsample", value = NULL)
+                    )
+                  )
                 )
               ),
-              fluidRow(
-                tags$hr(),
-                column(6,
-                  numericInput("pdLowThresh", label = "lower thresh", value = 1)
-                ),
-                column(6,
-                  radioButtons("pdUpThreshChoice", label = "upper thresh",
-                    choices = list("Inf" = "inf", "Manual Input" = "manual"),
-                    selected = "inf"),
-                  numericInput("pdUpThresh", "", value = Inf)
-                )
-              ),
-              fluidRow(
-                column(6,
-                  numericInput("pdSubsample", label = "subsample", value = NULL)
-                )
+              column(7,
+                verbatimTextOutput("pdTextResult")
               )
             )
-          ),
-          column(7,
-            verbatimTextOutput("pdTextResult")
           )
         )
       )
@@ -337,77 +347,262 @@ shinyUI(tagList(
     ##### Vizualizations #####
     navbarMenu("Plot",
       tabPanel("plot.STM",
-        titlePanel("Choose options and plot the summary of an STM object"),
         fluidPage(
           fluidRow(
-            column(9,
-              h3("plot.STM")
-            )
+            column(12, titlePanel("Plot an STM object"))
           ),
-          fluidRow(
-            column(5,
-              wellPanel(
-                fluidRow(
-                  column(12,
-                    radioButtons("plotStmType", label = "type",
-                      choices = list("summary" = "summary", "labels" = "labels",
-                        "perspectives" = "perspectives", "hist" = "hist"), selected = "summary")
-                  )
-                ),
-                fluidRow(
-                  column(6,
-                    numericInput('plotStmN', label = "n", value = 3)
-                  ),
-                  column(6,
-                    textInput('plotStmTopics',
-                      label = "topics, comma separated (e.g. 1,2)",
-                      value = NULL)
-                  )
-                ),
-                fluidRow(
-                  column(6,
-                    radioButtons("plotStmLabelType", label = "labeltype",
-                      choices = list("prob" = "prob", "frex" = "frex",
-                        "lift" = "lift", "score" = "score"), selected = "prob")
-                  ),
-                  column(6,
-                    numericInput("plotStmFrexw",
-                      label = "frexw, only needed if frex is chosen for labeltype",
-                      value = 0.5, step = 0.1)
-                  )
-                ),
-                fluidRow(
-                  column(12,
-                    textInput("plotStmMain", label = "main (title)", value = NULL)
-                  )
-                ),
-                fluidRow(
-                  column(6,
-                    textInput("plotStmXLim",
-                      label = "x-axis limits, comma separated (e.g -.1,.1)",
-                      value = NULL)
-                  ),
-                  column(6,
-                    textInput('plotStmYLim',
-                      label = "y-axis limits, comma separated (e.g -10,10)",
-                      value = NULL)
-                  )
-                ),
-                fluidRow(
-                  column(6,
+          tabsetPanel(id = "plotPanel",
+            tabPanel("summary",
+              fluidRow(
+                column(12, titlePanel("Summary Plot"))
+              ),
+              fluidRow(
+                column(5,
+                  wellPanel(
+                    fluidRow(
+                      column(6,
+                        actionButton("summaryPlotCmd", "Generate Plot!")
+                      ),
+                      column(6,
+                        actionButton("summaryPlotClearout", "Clear Output")
+                      )
+                    ),
                     tags$hr(),
-                    actionButton('plotStm', "Run STM plot!")
-                  ),
-                  column(6,
-                    tags$hr(),
-                    actionButton('plotStmClearout', "Clear Output")
+                    fluidRow(
+                      column(6,
+                        numericInput("summaryPlotN", label = "n", value = 3)
+                      ),
+                      column(6,
+                        textInput("summaryPlotTopics",
+                          label = "topics, comma separated (e.g. 1,2)",
+                          value = NULL)
+                      )
+                    ),
+                    fluidRow(
+                      column(6,
+                        radioButtons("summaryPlotLabelType", label = "labeltype",
+                          choices = list("prob" = "prob", "frex" = "frex",
+                            "lift" = "lift", "score" = "score"), selected = "prob")
+                      ),
+                      column(6,
+                        numericInput("summaryPlotFrexw",
+                          label = "frexw, only needed if frex is chosen for labeltype",
+                          value = 0.5, step = 0.1)
+                      )
+                    ),
+                    fluidRow(
+                      column(12,
+                        textInput("summaryPlotMain", label = "main (title)", value = NULL)
+                      )
+                    ),
+                    fluidRow(
+                      column(6,
+                        textInput("summaryPlotXLim",
+                          label = "x-axis limits, comma separated (e.g -.1,.1)",
+                          value = "")
+                      ),
+                      column(6,
+                        textInput("summaryPlotYLim",
+                          label = "y-axis limits, comma separated (e.g -10,10)",
+                          value = "")
+                      )
+                    )
                   )
+                ),
+                column(7,
+                  verbatimTextOutput("summaryPlotTextResult"),
+                  plotOutput("summaryPlot")
                 )
               )
             ),
-            column(7,
-              verbatimTextOutput("plotStmOut"),
-              plotOutput("plotStmPlot")
+            tabPanel("labels",
+              fluidRow(
+                column(12, titlePanel("Labels Plot"))
+              ),
+              fluidRow(
+                column(5,
+                  wellPanel(
+                    fluidRow(
+                      column(6,
+                        actionButton("labelPlotCmd", "Generate Plot!")
+                      ),
+                      column(6,
+                        actionButton("labelPlotClearout", "Clear Output")
+                      )
+                    ),
+                    tags$hr(),
+                    fluidRow(
+                      column(6,
+                        numericInput("labelPlotN", label = "n", value = 20)
+                      ),
+                      column(6,
+                        textInput("labelPlotTopics",
+                          label = "topics, comma separated (e.g. 1,2)",
+                          value = NULL)
+                      )
+                    ),
+                    fluidRow(
+                      column(6,
+                        radioButtons("labelPlotLabelType", label = "labeltype",
+                          choices = list("prob" = "prob", "frex" = "frex",
+                            "lift" = "lift", "score" = "score"), selected = "prob")
+                      ),
+                      column(6,
+                        numericInput("labelPlotFrexw",
+                          label = "frexw, only needed if frex is chosen for labeltype",
+                          value = 0.5, step = 0.1)
+                      )
+                    ),
+                    fluidRow(
+                      column(12,
+                        textInput("labelPlotMain", label = "main (title)", value = NULL)
+                      )
+                    ),
+                    fluidRow(
+                      column(6,
+                        textInput("labelPlotXLim",
+                          label = "x-axis limits, comma separated (e.g -.1,.1)",
+                          value = NULL)
+                      ),
+                      column(6,
+                        textInput("labelPlotYLim",
+                          label = "y-axis limits, comma separated (e.g -10,10)",
+                          value = NULL)
+                      )
+                    )
+                  )
+                ),
+                column(7,
+                  verbatimTextOutput("labelPlotTextResult"),
+                  plotOutput("labelPlot")
+                )
+              )
+            ),
+            tabPanel("perspectives",
+              fluidRow(
+                column(12, titlePanel("Perspectives Plot"))
+              ),
+              fluidRow(
+                column(5,
+                  wellPanel(
+                    fluidRow(
+                      column(6,
+                        actionButton("perspPlotCmd", "Generate Plot!")
+                      ),
+                      column(6,
+                        actionButton("perspPlotClearout", "Clear Output")
+                      )
+                    ),
+                    tags$hr(),
+                    fluidRow(
+                      column(6,
+                        numericInput("perspPlotN", label = "n", value = 25)
+                      ),
+                      column(6,
+                        textInput("perspPlotTopics",
+                          label = "topics, comma separated (e.g. 1,2)",
+                          value = NULL)
+                      )
+                    ),
+                    fluidRow(
+                      column(6,
+                        radioButtons("perspPlotLabelType", label = "labeltype",
+                          choices = list("prob" = "prob", "frex" = "frex",
+                            "lift" = "lift", "score" = "score"), selected = "prob")
+                      ),
+                      column(6,
+                        numericInput("perspPlotFrexw",
+                          label = "frexw, only needed if frex is chosen for labeltype",
+                          value = 0.5, step = 0.1)
+                      )
+                    ),
+                    fluidRow(
+                      column(12,
+                        textInput("perspPlotMain", label = "main (title)", value = NULL)
+                      )
+                    ),
+                    fluidRow(
+                      column(6,
+                        textInput("perspPlotXLim",
+                          label = "x-axis limits, comma separated (e.g -.1,.1)",
+                          value = NULL)
+                      ),
+                      column(6,
+                        textInput("perspPlotYLim",
+                          label = "y-axis limits, comma separated (e.g -10,10)",
+                          value = NULL)
+                      )
+                    )
+                  )
+                ),
+                column(7,
+                  verbatimTextOutput("perspPlotTextResult"),
+                  plotOutput("perspPlot")
+                )
+              )
+            ),
+            tabPanel("hist",
+              fluidRow(
+                column(12, titlePanel("Histogram Plot"))
+              ),
+              fluidRow(
+                column(5,
+                  wellPanel(
+                    fluidRow(
+                      column(6,
+                        actionButton("histPlotCmd", "Generate Plot!")
+                      ),
+                      column(6,
+                        actionButton("histPlotClearout", "Clear Output")
+                      )
+                    ),
+                    tags$hr(),
+                    fluidRow(
+                      column(6,
+                        numericInput("histPlotN", label = "n", value = 3)
+                      ),
+                      column(6,
+                        textInput("histPlotTopics",
+                          label = "topics, comma separated (e.g. 1,2)",
+                          value = NULL)
+                      )
+                    ),
+                    fluidRow(
+                      column(6,
+                        radioButtons("histPlotLabelType", label = "labeltype",
+                          choices = list("prob" = "prob", "frex" = "frex",
+                            "lift" = "lift", "score" = "score"), selected = "prob")
+                      ),
+                      column(6,
+                        numericInput("histPlotFrexw",
+                          label = "frexw, only needed if frex is chosen for labeltype",
+                          value = 0.5, step = 0.1)
+                      )
+                    ),
+                    fluidRow(
+                      column(12,
+                        textInput("histPlotMain", label = "main (title)", value = NULL)
+                      )
+                    ),
+                    fluidRow(
+                      column(6,
+                        textInput("histPlotXLim",
+                          label = "x-axis limits, comma separated (e.g -.1,.1)",
+                          value = NULL)
+                      ),
+                      column(6,
+                        textInput("histPlotYLim",
+                          label = "y-axis limits, comma separated (e.g -10,10)",
+                          value = NULL)
+                      )
+                    )
+                  )
+                ),
+                column(7,
+                  verbatimTextOutput("histPlotTextResult"),
+                  plotOutput("histPlot")
+                )
+              )
             )
           )
         )

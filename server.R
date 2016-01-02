@@ -88,6 +88,7 @@ shinyServer(function(input, output, session) {
   onclick("toggleAdvTextProc", toggle(id = "advTextProcOptions", anim = TRUE))
   observeEvent(input$tpClearout, ({
     shinyjs::text("tpTextResult", "")
+ #   output$prPlotOutput <- renderPlot({ invisible(NULL) })
   }))
   observe({
     toggleState("moveFromProcToStm", !is.null(storedData$prepdocs))
@@ -201,6 +202,7 @@ shinyServer(function(input, output, session) {
             paste("textProcessor did not complete correctly! This occurred because",
               "the output of textProcessor contained a vocab size of 0! Perhaps you entered a",
               "nontextual data column as the choice for documents?")))
+          storedData$textprocess <- NULL
         }
       } else {
         shinyjs::text("tpTextResult", tpOutputRaw)
@@ -211,29 +213,31 @@ shinyServer(function(input, output, session) {
   }))
 
   ##### Plot Removed #####
+  observe({
+    if (length(storedData$textprocess$vocab) > 0) {
+      vocabLength = length(storedData$textprocess$vocab)
+      newMax = as.integer(vocabLength + 0.1*vocabLength)
 
-  observeEvent(input$prClearout, ({
-    shinyjs::text("prTextResult", "")
-    output$prPlotOutput <- renderPlot({ invisible(NULL) })
-  }))
+      updateSliderInput(session, "prPlotRange", "Range:",
+        min = 1, max = newMax, value = c(1, newMax/2))
+    }
+  })
 
-  observeEvent(input$prRun, ({
+  observe({
     if (is.null(storedData$textprocess)) {
-      shinyjs::text("prTextResult", "You must successfully run textProcessor!")
       return(NULL)
     }
 
-    plotRevDocs <- storedData$textprocess$documents
+    plotRange <- as.integer(input$prPlotRange)
 
     output$prPlotOutput <- renderPlot(
-      isolate(
-        plotRemoved(plotRevDocs, lower.thresh = seq(from = input$plotLowThresh,
-          to = input$plotUpThresh,
-          by = input$plotInterval)
-        )
+        plotRemoved(storedData$textprocess$documents,
+          lower.thresh = seq(from = plotRange[[1]],
+          to = plotRange[[2]],
+          by = 1)
       )
     )
-  }))
+  })
 
   ##### Prep Documents #####
   # calculates on the output from text processor
@@ -414,44 +418,129 @@ shinyServer(function(input, output, session) {
   #   custom.labels, topic.names
 
   # change default for n automatically
-  observe({
-    plotType <- input$plotStmType
+#   observe({
+#     plotType <- input$plotStmType
+#
+#     if (plotType == "labels") {
+#       updateNumericInput(session, 'plotStmN', value = 20 )
+#     } else if (plotType == "perspectives") {
+#       updateNumericInput(session, 'plotStmN', value = 25 )
+#     } else {
+#       updateNumericInput(session, 'plotStmN', value = 3 )
+#     }
+#   })
 
-    if (plotType == "labels") {
-      updateNumericInput(session, 'plotStmN', value = 20 )
-    } else if (plotType == "perspectives") {
-      updateNumericInput(session, 'plotStmN', value = 25 )
-    } else {
-      updateNumericInput(session, 'plotStmN', value = 3 )
-    }
-  })
-
-  observeEvent(input$plotStmClearout, ({
-    output$plotStmOut <- renderPrint({ invisible(NULL) })
-    output$plotStmPlot <- renderPlot({ invisible(NULL) })
+  observeEvent(input$summaryPlotClearout, ({
+    shinyjs::text("summaryPlotTextResult", "")
+    output$summaryPlot <- renderPlot({ invisible(NULL) })
   }))
 
-  observeEvent(input$plotStm, ({
+  observeEvent(input$summaryPlotCmd, ({
     stmObj <- storedData$stmresult
 
     if (is.null(stmObj)) {
-      output$plotStmOut <- renderPrint({ "You must successfully run STM before plotting!" })
+      shinyjs::text("summaryPlotTextResult",
+        "You must successfully run STM before plotting!")
       return(NULL)
     }
 
-    tops <- changeCsStringToDoubleVectorOrLeaveNull(input$plotStmTopics)
-    plotXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$plotStmXLim)
-    plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$plotStmYLim)
+    tops <- changeCsStringToDoubleVectorOrLeaveNull(input$summaryPlotTopics)
+    plotXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$summaryPlotXLim)
+    plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$summaryPlotYLim)
 
-    output$plotStmPlot <- renderPlot({
+    output$summaryPlot <- renderPlot({
       isolate(
         plot.STM(stmObj,
-          type=input$plotStmType,
-          n=input$plotStmN,
+          type="summary",
+          n=input$summaryPlotN,
           topics=tops,
-          labeltype=input$plotStmLabelType,
-          frexw=input$plotStmFrexw,
-          main=input$plotStmMain,
+          labeltype=input$summaryPlotLabelType,
+          frexw=input$summaryPlotFrexw,
+          main=input$summaryPlotMain,
+          xlim=plotXLim,
+          ylim=plotYLim)
+      )
+    })
+  }))
+
+    observeEvent(input$labelPlotCmd, ({
+    stmObj <- storedData$stmresult
+
+    if (is.null(stmObj)) {
+      shinyjs::text("labelPlotTextResult",
+        "You must successfully run STM before plotting!")
+      return(NULL)
+    }
+
+    tops <- changeCsStringToDoubleVectorOrLeaveNull(input$labelPlotTopics)
+    plotXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$labelPlotXLim)
+    plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$labelPlotYLim)
+
+    output$labelPlot <- renderPlot({
+      isolate(
+        plot.STM(stmObj,
+          type="labels",
+          n=input$labelPlotN,
+          topics=tops,
+          labeltype=input$labelPlotLabelType,
+          frexw=input$labelPlotFrexw,
+          main=input$labelPlotMain,
+          xlim=plotXLim,
+          ylim=plotYLim)
+      )
+    })
+  }))
+
+    observeEvent(input$perspPlotCmd, ({
+    stmObj <- storedData$stmresult
+
+    if (is.null(stmObj)) {
+      shinyjs::text("perspPlotTextResult",
+        "You must successfully run STM before plotting!")
+      return(NULL)
+    }
+
+    tops <- changeCsStringToDoubleVectorOrLeaveNull(input$perspPlotTopics)
+    plotXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$perspPlotXLim)
+    plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$perspPlotYLim)
+
+    output$perspPlot <- renderPlot({
+      isolate(
+        plot.STM(stmObj,
+          type="perspectives",
+          n=input$perspPlotN,
+          topics=tops,
+          labeltype=input$perspPlotLabelType,
+          frexw=input$perspPlotFrexw,
+          main=input$perspPlotMain,
+          xlim=plotXLim,
+          ylim=plotYLim)
+      )
+    })
+  }))
+
+    observeEvent(input$histPlotCmd, ({
+    stmObj <- storedData$stmresult
+
+    if (is.null(stmObj)) {
+      shinyjs::text("histPlotTextResult",
+        "You must successfully run STM before plotting!")
+      return(NULL)
+    }
+
+    tops <- changeCsStringToDoubleVectorOrLeaveNull(input$histPlotTopics)
+    plotXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$histPlotXLim)
+    plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$histPlotYLim)
+
+    output$histPlot <- renderPlot({
+      isolate(
+        plot.STM(stmObj,
+          type="hist",
+          n=input$histPlotN,
+          topics=tops,
+          labeltype=input$histPlotLabelType,
+          frexw=input$histPlotFrexw,
+          main=input$histPlotMain,
           xlim=plotXLim,
           ylim=plotYLim)
       )
