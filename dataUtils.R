@@ -17,6 +17,12 @@ changeStringToLogical <- function(logicalString) {
   }
 }
 
+changeStringNullToNull <- function(nullStr) {
+  if (nullStr == "NULL") {
+    return(NULL)
+  }
+}
+
 errorForUi <- function(errorMessage) {
   return(paste("ERROR:", errorMessage))
 }

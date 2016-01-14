@@ -160,25 +160,25 @@ shinyUI(tagList(
                 )
               ),
               column(7,
-                verbatimTextOutput("tpTextResult"),
-                plotOutput("prPlotOutput", height = "350px"),
-                div(style = "align : center;",
-                  sliderInput("prPlotRange", "Range:",
-                    min = 1, max = 1000, value = c(1,200), width = "100%")
-                )
+                verbatimTextOutput("tpTextResult")
+#                 plotOutput("prPlotOutput", height = "350px"),
+#                 div(style = "align : center;",
+#                   sliderInput("prPlotRange", "Range:",
+#                     min = 1, max = 1000, value = c(1,200), width = "100%")
+#                 )
               )
-            )
+            ),
             ##### Plot Removed #####
-#             fluidRow(
-#               column(12, titlePanel("plotRemoved"))
-#             ),
-#             fluidRow(
-#               column(5,
-#                 wellPanel(
-#                   fluidRow(
-#                     column(6, actionButton("prRun", "Run plotRemove")),
-#                     column(6, actionButton("prClearout", "Clear Output"))
-#                   ),
+            fluidRow(
+              column(12, titlePanel("plotRemoved"))
+            ),
+            fluidRow(
+              column(5,
+                wellPanel(
+                  fluidRow(
+                    column(6, actionButton("prRun", "Run plotRemove")),
+                    column(6, actionButton("prClearout", "Clear Output"))
+                  )
 #                   fluidRow(
 #                     column(6,
 #                       tags$hr(),
@@ -194,13 +194,17 @@ shinyUI(tagList(
 #                       numericInput("plotInterval", label = "interval", value = 1)
 #                     )
 #                   )
-#                 )
-#               ),
-#               column(7,
-#                 verbatimTextOutput("prTextResult"),
-#                 plotOutput("prPlotOutput", height = "350px")
-#               )
-#             )
+                 )
+              ),
+              column(7,
+#                verbatimTextOutput("prTextResult"),
+                plotOutput("prPlotOutput", height = "350px"),
+                div(style = "align : center;",
+                  sliderInput("prPlotRange", "Range:",
+                    min = 1, max = 1000, value = c(1,200), width = "100%")
+                )
+              )
+            )
           ),
           ##### Prep Documents #####
           tabPanel("prepDocuments",
@@ -218,21 +222,29 @@ shinyUI(tagList(
                       actionButton("pdClearout", "Clear Output")
                     )
                   ),
-                  fluidRow(
-                    tags$hr(),
-                    column(6,
-                      numericInput("pdLowThresh", label = "lower thresh", value = 1)
-                    ),
-                    column(6,
-                      radioButtons("pdUpThreshChoice", label = "upper thresh",
-                        choices = list("Inf" = "inf", "Manual Input" = "manual"),
-                        selected = "inf"),
-                      numericInput("pdUpThresh", "", value = Inf)
-                    )
-                  ),
-                  fluidRow(
-                    column(6,
-                      numericInput("pdSubsample", label = "subsample", value = NULL)
+                  hr(),
+                  a(id = "toggleAdvPrepDocs", "Show/hide advanced options"),
+                  shinyjs::hidden(
+                    div(id = "advPrepDocsOptions",
+                      br(),
+                      fluidRow(
+                        column(6,
+                          numericInput("pdLowThresh", label = "lower thresh", value = 1)
+                        ),
+                        column(6,
+                          radioButtons("pdUpThreshChoice", label = "upper thresh",
+                            choices = list("Inf" = "inf", "Manual Input:" = "manual"),
+                            selected = "inf")
+                        )
+                      ),
+                      fluidRow(
+                        column(6,
+                          numericInput("pdSubsample", label = "subsample", value = NULL)
+                        ),
+                        column(6,
+                          numericInput("pdUpThresh", "", value = Inf)
+                        )
+                      )
                     )
                   )
                 )
@@ -253,94 +265,148 @@ shinyUI(tagList(
             titlePanel("Step 3: Run STM model")
           )
         ),
-        fluidRow(
-          column(12, titlePanel("stm"))
-          #    column(2, actionButton("exportStm", "Export STM data"))
-        ),
-        fluidRow(
-          column(5,
-            wellPanel(
-              fluidRow(
-                column(6, actionButton("stmRun", "Run STM")),
-                column(6, actionButton('stmClearout', "Clear STM Output"))
-              ),
-              fluidRow(
-                tags$hr(),
-                column(6,  numericInput("stmK", label = "K", value = NULL)),
-                column(6,
-                  numericInput("stmSeed", label = "seed", value = NULL)
-                )
-              ),
-              fluidRow(
-                column(6,
-                  textInput("stmContent", label = "content formula\n(include leading ~)")
-                ),
-                column(6,
-                  textInput("stmPrev", label = "prevalence formula\n(include leading ~)")
-                )
-              ),
-              fluidRow(
-                column(12,
-                  radioButtons("stmInitType",
-                    label = "init type",
-                    choices = list("LDA" = "LDA", "Random" = "Random", "Spectral" = "Spectral"),
-                    inline = T,
-                    selected = "LDA")
-                )
-              ),
-              hr(),
-              a(id = "toggleAdvStm", "Show/hide advanced options"),
-              shinyjs::hidden(
-                div(id = "advStmOptions",
-                  br(),
+        tabsetPanel(id = "modelingPanel",
+          tabPanel("stm",
+            fluidRow(
+              column(12, titlePanel("stm"))
+              #    column(2, actionButton("exportStm", "Export STM data"))
+            ),
+            fluidRow(
+              column(5,
+                wellPanel(
                   fluidRow(
+                    column(6, actionButton("stmRun", "Run STM")),
+                    column(6, actionButton('stmClearout', "Clear STM Output"))
+                  ),
+                  fluidRow(
+                    tags$hr(),
+                    column(6,  numericInput("stmK", label = "K", value = NULL)),
                     column(6,
-                      numericInput("stmMaxEm", label = "max em iterations", value = 100)
-                    ),
-                    column(6,
-                      numericInput("stmEmTol", label = "emtol", value = 0.00001, step = 0.00001)
+                      numericInput("stmSeed", label = "seed", value = NULL)
                     )
                   ),
                   fluidRow(
                     column(6,
-                      numericInput("stmReportEvr", label = "report every", value = 1)
+                      textInput("stmContent", label = "content formula\n(include leading ~)")
                     ),
                     column(6,
-                      radioButtons("stmLdaBeta", label = "LDA Beta",
-                        choices = list("True" = T, "False" = F), selected = T)
-                    )
-                  ),
-                  fluidRow(
-                    column(6,
-                      numericInput("stmNgroups", label = "ngroups", value = 1)
-                    ),
-                    column(6,
-                      radioButtons("stmInteractions", label = "Interactions",
-                        choices = list("True" = T, "False" = F), selected = T)
-                    )
-                  ),
-                  fluidRow(
-                    column(6,
-                      radioButtons("stmKappa", label = "Kappa Prior",
-                        choices = list("L1" = "L1", "Jeffreys" = "Jeffreys"),
-                        selected = "L1")
-                    ),
-                    column(6,
-                      radioButtons("stmGamma", label = "Gamma Prior",
-                        choices = list("Pooled" = "Pooled", "L1" = "L1"), selected = "Pooled")
+                      textInput("stmPrev", label = "prevalence formula\n(include leading ~)")
                     )
                   ),
                   fluidRow(
                     column(12,
-                      sliderInput("stmSigma", "Sigma Prior",
-                        min = 0, max = 1, value = 0, step = 0.01)
+                      radioButtons("stmInitType",
+                        label = "init type",
+                        choices = list("LDA" = "LDA", "Random" = "Random", "Spectral" = "Spectral"),
+                        inline = T,
+                        selected = "LDA")
+                    )
+                  ),
+                  hr(),
+                  a(id = "toggleAdvStm", "Show/hide advanced options"),
+                  shinyjs::hidden(
+                    div(id = "advStmOptions",
+                      br(),
+                      fluidRow(
+                        column(6,
+                          numericInput("stmMaxEm", label = "max em iterations", value = 100)
+                        ),
+                        column(6,
+                          numericInput("stmEmTol", label = "emtol", value = 0.00001, step = 0.00001)
+                        )
+                      ),
+                      fluidRow(
+                        column(6,
+                          numericInput("stmReportEvr", label = "report every", value = 1)
+                        ),
+                        column(6,
+                          radioButtons("stmLdaBeta", label = "LDA Beta",
+                            choices = list("True" = T, "False" = F), selected = T)
+                        )
+                      ),
+                      fluidRow(
+                        column(6,
+                          numericInput("stmNgroups", label = "ngroups", value = 1)
+                        ),
+                        column(6,
+                          radioButtons("stmInteractions", label = "Interactions",
+                            choices = list("True" = T, "False" = F), selected = T)
+                        )
+                      ),
+                      fluidRow(
+                        column(6,
+                          radioButtons("stmKappa", label = "Kappa Prior",
+                            choices = list("L1" = "L1", "Jeffreys" = "Jeffreys"),
+                            selected = "L1")
+                        ),
+                        column(6,
+                          radioButtons("stmGamma", label = "Gamma Prior",
+                            choices = list("Pooled" = "Pooled", "L1" = "L1"), selected = "Pooled")
+                        )
+                      ),
+                      fluidRow(
+                        column(12,
+                          sliderInput("stmSigma", "Sigma Prior",
+                            min = 0, max = 1, value = 0, step = 0.01)
+                        )
+                      )
                     )
                   )
                 )
-              )
+              ),
+              column(7, verbatimTextOutput("stmTextResult"))
             )
           ),
-          column(7, verbatimTextOutput("stmTextResult"))
+          tabPanel("estimateEffect",
+            fluidRow(
+              column(12, titlePanel("estimateEffect"))
+            ),
+            fluidRow(
+              column(5,
+                wellPanel(
+                  fluidRow(
+                    column(6, actionButton("estEffRun", "Run estimateEffect")),
+                    column(6, actionButton('estEffClearout', "Clear Output"))
+                  ),
+                  fluidRow(
+                    hr(),
+                    column(12,
+                      textInput("estEffFormula", label = "formula\n(include leading ~)")
+                    )
+                  ),
+                  fluidRow(
+                    column(12,
+                      radioButtons("estEffUncertainty",
+                        label = "uncertainty type",
+                        choices = list("Global" = "Global",
+                          "Local" = "Local",
+                          "None" = "None"),
+                        inline = T,
+                        selected = "Global")
+                    )
+                  ),
+                  hr(),
+                  a(id = "toggleAdvEstEff", "Show/hide advanced options"),
+                  shinyjs::hidden(
+                    div(id = "advEstEffOptions",
+                      br(),
+                      fluidRow(
+                        column(12,
+                          numericInput("estEffNSims", label = "nsims", value = 25)
+                        )
+                      ),
+                      fluidRow(
+                        column(12,
+                          textInput("estEffPrior", label = "prior, enter a scalar or comma-separated vector of numbers")
+                        )
+                      )
+                    )
+                  )
+                )
+              ),
+              column(7, verbatimTextOutput("estEffTextResult"))
+            )
+          )
         )
       )
     ),
@@ -607,8 +673,77 @@ shinyUI(tagList(
           )
         )
       ),
+      tabPanel("plot.estimateEffect",
+        fluidPage(
+          fluidRow(
+            column(12, titlePanel("Plot the output from estimateEffect"))
+          ),
+          fluidRow(
+            column(5,
+              wellPanel(
+                fluidRow(
+                  column(6,
+                    actionButton("estEffPlot", "Generate Plot!")
+                  ),
+                  column(6,
+                    actionButton("estEffPlotClearout", "Clear Output")
+                  )
+                ),
+                tags$hr(),
+                fluidRow(
+                  column(6,
+                    textInput("estEffPlotCov",
+                      label = "covariate",
+                      value = NULL)
+                  ),
+                  column(6,
+                    radioButtons("estEffPlotMethod", label = "method",
+                      choices = list("pointestimate" = "pointestimate",
+                        "difference" = "difference",
+                        "continuous" = "continuous"),
+                      selected = "pointestimate")
+                  )
+                ),
+                fluidRow(
+                  column(12,
+                    textInput("estEffPlotTopics", label = "topics, comma-separated. Enter nothing to default ot all topics")
+                  )
+                ),
+                fluidRow(
+                  column(6,
+                    textInput("estEffCovVar1", label = "cov.value1, comma-separated")
+                  ),
+                  column(6,
+                    textInput("estEffCovVar2", label = "cov.value2, comma-separated")
+                  )
+                ),
+                fluidRow(
+                  column(6,
+                    textInput("estEffMod", label = "moderator")
+                  ),
+                  column(6,
+                    textInput("estEffModValue", label = "moderator.value")
+                  )
+                ),
+                fluidRow(
+                  column(6,
+                    textInput("estEffLineCol", label = "linecol")
+                  ),
+                  column(6,
+                    numericInput("estEffNPoints", label = "npoints", value = 100)
+                  )
+                )
+              )
+            ),
+            column(7,
+              verbatimTextOutput("estEffPlotTextResult"),
+              plotOutput("estEffPlot")
+            )
+          )
+        )
+      ),
       tabPanel("labelTopics",
-        titlePanel("Generate a set of words describing each topic from an STM object"),
+        titlePanel("Generate words describing each topic from an STM object"),
         fluidPage(
           fluidRow(
             column(9,

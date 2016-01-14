@@ -27,6 +27,7 @@ shinyServer(function(input, output, session) {
   storedData$textprocess <- NULL
   storedData$prepdocs <- NULL
   storedData$stmresult <- NULL
+  storedData$esteffect <- NULL
 
   ##### Data Upload #####
   # Allow file upload and submission to be read by read.csv
@@ -197,6 +198,11 @@ shinyServer(function(input, output, session) {
           doneAlert <- sprintf("Done processing %s data!", dataType)
           completeMessage <- paste(tpOutputRaw, doneAlert, sep = "\n")
           shinyjs::text("tpTextResult", completeMessage)
+          vocabLength = length(storedData$textprocess$vocab)
+          newMax = as.integer(vocabLength + 0.1*vocabLength)
+
+          updateSliderInput(session, "prPlotRange", "Range:",
+            min = 1, max = newMax, value = c(1, newMax/2))
         } else {
           shinyjs::text("tpTextResult", errorForUi(
             paste("textProcessor did not complete correctly! This occurred because",
@@ -213,40 +219,45 @@ shinyServer(function(input, output, session) {
   }))
 
   ##### Plot Removed #####
-  observe({
-    if (length(storedData$textprocess$vocab) > 0) {
-      vocabLength = length(storedData$textprocess$vocab)
-      newMax = as.integer(vocabLength + 0.1*vocabLength)
-
-      updateSliderInput(session, "prPlotRange", "Range:",
-        min = 1, max = newMax, value = c(1, newMax/2))
-    }
-  })
-
-  observe({
-    if (is.null(storedData$textprocess)) {
-      return(NULL)
-    }
-
-    plotRange <- as.integer(input$prPlotRange)
-
-    output$prPlotOutput <- renderPlot(
-        plotRemoved(storedData$textprocess$documents,
-          lower.thresh = seq(from = plotRange[[1]],
-          to = plotRange[[2]],
-          by = 1)
-      )
-    )
-  })
+#   observe({
+#     if (length(storedData$textprocess$vocab) > 0) {
+#       vocabLength = length(storedData$textprocess$vocab)
+#       newMax = as.integer(vocabLength + 0.1*vocabLength)
+#
+#       updateSliderInput(session, "prPlotRange", "Range:",
+#         min = 1, max = newMax, value = c(1, newMax/2))
+#     }
+#   })
+#
+#   observeEvent(input$prRun, ({
+#     if (is.null(storedData$textprocess)) {
+#       return(NULL)
+#     }
+#
+#     plotRange <- as.integer(input$prPlotRange)
+#
+#     output$prPlotOutput <- renderPlot(
+#       isolate(
+#         plotRemoved(storedData$textprocess$documents,
+#           lower.thresh = seq(from = plotRange[[1]],
+#             to = plotRange[[2]],
+#             by = 1)
+#         )
+#       )
+#     )
+#   }))
 
   ##### Prep Documents #####
   # calculates on the output from text processor
   # or calculates on the file uploaded by the user
   # **TODO**: expand functionality for case of user-input file
+  onclick("toggleAdvPrepDocs", toggle(id = "advPrepDocsOptions", anim = TRUE))
 
   # Change Upper Thresh
   observe({
     pdUpThreshType <- input$pdUpThreshChoice
+
+    toggleState("pdUpThresh", pdUpThreshType == "manual")
 
     if (pdUpThreshType == "inf") {
       updateNumericInput(session, 'pdUpThresh', value = Inf )
@@ -340,7 +351,7 @@ shinyServer(function(input, output, session) {
     stmArgs <- list()
 
     if(is.null(input$stmK)) {
-      shinyjs::text("stmTextResult", "K is blank!")
+      shinyjs::text("stmTextResult", "K cannot be left blank!")
       return(NULL)
     }
 
@@ -365,16 +376,17 @@ shinyServer(function(input, output, session) {
 
       prevString <- input$stmPrev
       if (prevString != "") {
-        try(append(stmArgs, c(prevalence=formula(prevString))))
+        try(stmArgs <- c(stmArgs, prevalence=formula(prevString)))
       }
 
-      if (!is.null(input$stmSeed)) {
-        append(stmArgs, c(seed=input$stmSeed))
+      inputSeed <- input$stmSeed
+      if (!is.na(inputSeed)) {
+        try(stmArgs <- c(stmArgs, seed=inputSeed))
       }
 
       contentString <- input$stmContent
       if (contentString != "") {
-        try(append(stmArgs, c(prevalence=formula(contentString))))
+        try(stmArgs <- c(stmArgs, content=formula(contentString)))
       }
 
       stmOutputRaw <-
@@ -410,6 +422,111 @@ shinyServer(function(input, output, session) {
     }
 
     save(stmObj, file="stmResult.RData")
+  }))
+
+  ##### Estimate Effect #####
+  onclick("toggleAdvEstEff", toggle(id = "advEstEffOptions", anim = TRUE))
+
+  observeEvent(input$estEffClearout, ({
+    shinyjs::text("estEffTextResult", "")
+  }))
+
+  observeEvent(input$estEffRun, ({
+    stmObj <- storedData$stmresult
+
+    if (is.null(stmObj)) {
+      shinyjs::text("estEffTextResult",
+        "You must successfully run STM before running estimateEffect!")
+      return(NULL)
+    }
+
+    estEffArgs <- list(
+      stmobj=stmObj,
+      metadata=storedData$prepdocs$meta,
+      uncertainty=input$estEffUncertainty,
+      nsims=input$estEffNSims
+    )
+    formParseOutput <- ""
+
+    estEffString <- input$estEffFormula
+    if (estEffString != "") {
+      try(estEffArgs <- c(estEffArgs, formula=formula(estEffString)))
+    } else {
+      shinyjs::text("estEffTextResult",
+        "You must enter a formula to run estimateEffect!")
+      return(NULL)
+    }
+
+    if(input$estEffUncertainty == "Local") {
+      try(estEffArgs <- c(estEffArgs, documents=storedData$prepdocs$documents))
+    }
+
+    prior <- input$estEffPrior
+    if (prior != "") {
+      try(estEffArgs <- c(estEffArgs,
+        prior=changeCsStringToDoubleVectorOrLeaveNull(prior)))
+    }
+
+    withProgress( message = "Running estimateEffect, please wait...", {
+      setProgress(0.5)
+
+      estEffOutputRaw <-
+        tryCatch({
+          paste(
+            capture.output(
+              isolate(
+                storedData$esteffect <- do.call(estimateEffect, estEffArgs)
+              )
+            ), collapse = "\n")
+        }, error=function(e) {
+          errorMessage <-
+            paste(errorForUi("Error while running estimateEffect:"), e, sep = "\n")
+          storedData$esteffect <- NULL
+          return(errorMessage)
+        }, warning=function(w) {
+          warningMessage <-
+            paste("WARNING: Warning while running estimateEffect:", w, sep = "\n")
+          storedData$esteffect <- NULL
+          return(warningMessage)
+        }, finally={
+          setProgress(1)
+        })
+    })
+    shinyjs::text("estEffTextResult", "Ran estimateEffect!")
+  }))
+
+  observeEvent(input$estEffPlot, ({
+    estEff <- storedData$esteffect
+
+    if (is.null(estEff)) {
+      shinyjs::text("estEffTextResult",
+        "You must successfully run estimateEffect before plotting!")
+      return(NULL)
+    }
+
+    tops <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffPlotTopics)
+    covVar1 <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffCovVar1)
+    covVar2 <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffCovVar2)
+
+    if (is.null(tops)) {
+      tops <- estEff$topics
+    }
+
+    output$estEffPlot <- renderPlot({
+      isolate(
+        plot.estimateEffect(x=estEff,
+          covariate=input$estEffPlotCov,
+          method=input$estEffPlotMethod,
+          topics=tops,
+          cov.value1=covVar1,
+          cov.value2=covVar2,
+          moderator=input$estEffMod,
+          moderator.value=input$estEffModValue,
+          linecol=input$estEffLineCol,
+          npoints=input$estEffNPoints
+          )
+      )
+    })
   }))
 
   ##### plot STM #####
