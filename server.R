@@ -2,15 +2,10 @@
 #
 # Server-side logic for handling stm workflows
 
+source("data_utils.R")
+pkgs <- c("shiny", "stm", "shinyjs")
 
-library(shiny)
-library(stm)
-library(shinyjs)
-source("dataUtils.R")
-
-#### TEST CODE HERE ####
-# source("shinyUtils.R")
-####
+load.packages(pkgs)
 
 options(shiny.maxRequestSize=100*1024^2)
 
@@ -45,6 +40,10 @@ shinyServer(function(input, output, session) {
     updateTabsetPanel(session, "navBar", selected = "Processing")
   }))
 
+  observeEvent(input$viewDataHelp, ({
+    shinyjs::text("dataHelp", "This tab allows you to upload a set of data")
+  }))
+
   observeEvent(input$submitDataForUpload, ({
     shinyjs::text("dataInputTextResult", "")
 
@@ -59,8 +58,9 @@ shinyServer(function(input, output, session) {
           sep=input$columnSeparator,
           quote=input$quoteAroundData)
 
+      toggleState("moveFromStep1To2")
+
       tryCatch({
-        disable("moveFromStep1To2")
         storedData$data <- do.call(read.csv, readDataArgs)
       }, error=function(e) {
         funName <- deparse(substitute(read.csv))
