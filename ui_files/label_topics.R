@@ -2,6 +2,13 @@ fluidRow(
   column(5,
     wellPanel(
       fluidRow(
+        column(8,
+          actionButton("labelTopics", "Run Label Topics")
+        ),
+        helpWithModal("labelTopicsHelp", 4)
+      ),
+      hr(),
+      fluidRow(
         column(6,
           textInput('labelTopicsTopics',
             label = "topics, comma separated (e.g. 1,2)",
@@ -19,21 +26,11 @@ fluidRow(
             label = "frexweight, a weight used in FREX scoring algorithm",
             value = 0.5, step = 0.1)
         )
-      ),
-      fluidRow(
-        column(6,
-          tags$hr(),
-          actionButton('labelTopics', "Run Label Topics")
-        ),
-        column(6,
-          tags$hr(),
-          actionButton('labelTopicsClearout', "Clear Output")
-        )
       )
     )
   ),
   column(7,
-    verbatimTextOutput("labelTopicsOut"),
+    verbatimTextOutput("labelTopicsTextResult"),
     plotOutput("labelTopicsPlot")
   )
 )

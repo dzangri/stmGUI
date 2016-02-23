@@ -2,12 +2,10 @@ fluidRow(
   column(5,
     wellPanel(
       fluidRow(
-        column(6,
+        column(8,
           actionButton("perspPlotCmd", "Generate Plot!")
         ),
-        column(6,
-          actionButton("perspPlotClearout", "Clear Output")
-        )
+        helpWithModal("perspPlotHelp", 4)
       ),
       tags$hr(),
       fluidRow(

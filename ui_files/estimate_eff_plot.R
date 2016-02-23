@@ -2,12 +2,10 @@ fluidRow(
   column(5,
     wellPanel(
       fluidRow(
-        column(6,
+        column(8,
           actionButton("estEffPlot", "Generate Plot!")
         ),
-        column(6,
-          actionButton("estEffPlotClearout", "Clear Output")
-        )
+        helpWithModal("estEffPlotHelp", 4)
       ),
       tags$hr(),
       fluidRow(
@@ -26,7 +24,8 @@ fluidRow(
       ),
       fluidRow(
         column(12,
-          textInput("estEffPlotTopics", label = "topics, comma-separated. Enter nothing to default ot all topics")
+          textInput("estEffPlotTopics", label = "topics, comma-separated.
+            Enter nothing to default to all topics")
         )
       ),
       fluidRow(

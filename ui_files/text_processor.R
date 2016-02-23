@@ -2,12 +2,10 @@ fluidRow(
   column(5,
     wellPanel(
       fluidRow(
-        column(6,
+        column(8,
           actionButton('tpProcessText', "Process Text")
         ),
-        column(6,
-          actionButton('tpClearout', "Clear Output")
-        )
+        helpWithModal("tpHelp", 4)
       ),
       fluidRow(
         hr(),

@@ -2,8 +2,8 @@ fluidRow(
   column(5,
     wellPanel(
       fluidRow(
-        column(6, actionButton("estEffRun", "Run estimateEffect")),
-        column(6, actionButton('estEffClearout', "Clear Output"))
+        column(8, actionButton("estEffRun", "Run estimateEffect")),
+        helpWithModal("estEffHelp", 4)
       ),
       fluidRow(
         hr(),

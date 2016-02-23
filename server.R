@@ -2,12 +2,26 @@
 #
 # Server-side logic for handling stm workflows
 
-source("data_utils.R")
 pkgs <- c("shiny", "stm", "shinyjs")
-
 load.packages(pkgs)
 
+source("data_utils.R")
+
 options(shiny.maxRequestSize=100*1024^2)
+
+observeNextStep <- function(input, output, session) {
+  reactNextStep <- reactive({
+    input$nextStep
+  })
+  return(reactNextStep)
+}
+
+observeClearout <- function(input, output, session) {
+  reactClearout <- reactive({
+    input$clearout
+  })
+  return(reactClearout)
+}
 
 shinyServer(function(input, output, session) {
 
@@ -24,28 +38,80 @@ shinyServer(function(input, output, session) {
   storedData$stmresult <- NULL
   storedData$esteffect <- NULL
 
+  dataInputTitleObserver <- callModule(observeNextStep, "dataInputTitle")
+  processingTitleObserver <- callModule(observeNextStep, "processingTitle")
+  stmTitleObserver <- callModule(observeNextStep, "stmTitle")
+
+  observeEvent(dataInputTitleObserver(), ({
+    updateTabsetPanel(session, "navBar", selected = "Processing")
+  }))
+  observeEvent(processingTitleObserver(), ({
+    updateTabsetPanel(session, "navBar", selected = "Model")
+  }))
+  observeEvent(stmTitleObserver(), ({
+    updateTabsetPanel(session, "navBar", selected = "plot.STM")
+  }))
+
+  tpClearoutObserver <- callModule(observeClearout, "tpClearout")
+  prClearoutObserver <- callModule(observeClearout, "prClearout")
+  pdClearoutObserver <- callModule(observeClearout, "pdClearout")
+  stmClearoutObserver <- callModule(observeClearout, "stmClearout")
+  estEffClearoutObserver <- callModule(observeClearout, "estEffClearout")
+  summaryPlotClearoutObserver <- callModule(observeClearout, "summaryPlotClearout")
+  labelsPlotClearoutObserver <- callModule(observeClearout, "labelsPlotClearout")
+  perspPlotClearoutObserver <- callModule(observeClearout, "perspPlotClearout")
+  histPlotClearoutObserver <- callModule(observeClearout, "histPlotClearout")
+  estEffPlotClearoutObserver <- callModule(observeClearout, "estEffPlotClearout")
+  labelTopicsClearoutObserver <- callModule(observeClearout, "labelTopicsClearout")
+
+  observeEvent(tpClearoutObserver(), ({
+    shinyjs::html("tpTextResult", "")
+  }))
+  observeEvent(prClearoutObserver(), ({
+    shinyjs::html("prPlotOutput", "")
+  }))
+  observeEvent(pdClearoutObserver(), ({
+    shinyjs::html("pdTextResult", "")
+  }))
+  observeEvent(stmClearoutObserver(), ({
+    shinyjs::html("stmTextResult", "")
+  }))
+  observeEvent(estEffClearoutObserver(), ({
+    shinyjs::html("estEffTextResult", "")
+  }))
+  observeEvent(summaryPlotClearoutObserver(), ({
+    shinyjs::html("summaryPlotTextResult", "")
+  }))
+  observeEvent(labelsPlotClearoutObserver(), ({
+    shinyjs::html("labelPlotTextResult", "")
+  }))
+  observeEvent(perspPlotClearoutObserver(), ({
+    shinyjs::html("perspPlotTextResult", "")
+  }))
+  observeEvent(histPlotClearoutObserver(), ({
+    shinyjs::html("histPlotTextResult", "")
+  }))
+  observeEvent(estEffPlotClearoutObserver(), ({
+    shinyjs::html("estEffPlotTextResult", "")
+  }))
+  observeEvent(labelTopicsClearoutObserver(), ({
+    shinyjs::html("labelTopicsTextResult", "")
+  }))
+
   ##### Data Upload #####
   # Allow file upload and submission to be read by read.csv
   # as the raw data in shiny
   # **TODO**: Expand file types that can be handled
-
   onclick("toggleAdvDataUpload", toggle(id = "advUploadOptions", anim = TRUE))
   observe({
     toggleState("submitDataForUpload", !is.null(input$dataFileToUpload))
   })
   observe({
-    toggleState("moveFromDataToProc", !is.null(storedData$data))
+    toggleState("dataInputTitle-nextStep", !is.null(storedData$data))
   })
-  observeEvent(input$moveFromDataToProc, ({
-    updateTabsetPanel(session, "navBar", selected = "Processing")
-  }))
-
-  observeEvent(input$viewDataHelp, ({
-    shinyjs::text("dataHelp", "This tab allows you to upload a set of data")
-  }))
 
   observeEvent(input$submitDataForUpload, ({
-    shinyjs::text("dataInputTextResult", "")
+    shinyjs::html("dataInputTextResult", "")
 
     userData <- input$dataFileToUpload
 
@@ -64,12 +130,12 @@ shinyServer(function(input, output, session) {
         storedData$data <- do.call(read.csv, readDataArgs)
       }, error=function(e) {
         funName <- deparse(substitute(read.csv))
-        shinyjs::text("dataInputTextResult",
+        shinyjs::html("dataInputTextResult",
           paste("ERROR: Error while running '", funName, "':\n", e, sep = ""))
         storedData$data <- NULL
         return(NULL)
       }, warning=function(w) {
-        shinyjs::text("dataInputTextResult",
+        shinyjs::html("dataInputTextResult",
           paste("WARNING: Warning while reading data:\n", w, sep = "\n"))
         storedData$data <- NULL
         return(NULL)
@@ -87,16 +153,9 @@ shinyServer(function(input, output, session) {
   # includes option to choose data from preloaded gadarian data
   # or data uploaded by the user
   onclick("toggleAdvTextProc", toggle(id = "advTextProcOptions", anim = TRUE))
-  observeEvent(input$tpClearout, ({
-    shinyjs::text("tpTextResult", "")
- #   output$prPlotOutput <- renderPlot({ invisible(NULL) })
-  }))
   observe({
-    toggleState("moveFromProcToStm", !is.null(storedData$prepdocs))
+    toggleState("processingTitle-nextStep", !is.null(storedData$prepdocs))
   })
-  observeEvent(input$moveFromProcToStm, ({
-    updateTabsetPanel(session, "navBar", selected = "Model")
-  }))
 
   # Only activate the submit button if either the preloaded gadarian data
   # is chosen OR the user has uploaded data
@@ -151,7 +210,7 @@ shinyServer(function(input, output, session) {
 
     if (!is.null(docsForTp)) {
       # **TODO**: Implement wordLengths, customstopwords, onlytxtfiles
-      shinyjs::text("tpTextResult", "textProcessor is running...")
+      shinyjs::html("tpTextResult", "textProcessor is running...")
 
       argsForTp <-
         list(documents=docsForTp,
@@ -176,7 +235,7 @@ shinyServer(function(input, output, session) {
             paste(
               capture.output(
                 isolate(
-                storedData$textprocess <- do.call(textProcessor, argsForTp)
+                  storedData$textprocess <- do.call(textProcessor, argsForTp)
                 )
               ), collapse = "\n")
           }, error=function(e) {
@@ -197,55 +256,55 @@ shinyServer(function(input, output, session) {
         if (length(storedData$textprocess$vocab) > 0) {
           doneAlert <- sprintf("Done processing %s data!", dataType)
           completeMessage <- paste(tpOutputRaw, doneAlert, sep = "\n")
-          shinyjs::text("tpTextResult", completeMessage)
+          shinyjs::html("tpTextResult", completeMessage)
           vocabLength = length(storedData$textprocess$vocab)
           newMax = as.integer(vocabLength + 0.1*vocabLength)
 
           updateSliderInput(session, "prPlotRange", "Range:",
             min = 1, max = newMax, value = c(1, newMax/2))
         } else {
-          shinyjs::text("tpTextResult", errorForUi(
+          shinyjs::html("tpTextResult", errorForUi(
             paste("textProcessor did not complete correctly! This occurred because",
               "the output of textProcessor contained a vocab size of 0! Perhaps you entered a",
               "nontextual data column as the choice for documents?")))
           storedData$textprocess <- NULL
         }
       } else {
-        shinyjs::text("tpTextResult", tpOutputRaw)
+        shinyjs::html("tpTextResult", tpOutputRaw)
       }
     } else {
-      shinyjs::text("tpTextResult", errorForUi("Try again with column name of the document vector!"))
+      shinyjs::html("tpTextResult", errorForUi("Try again with column name of the document vector!"))
     }
   }))
 
   ##### Plot Removed #####
-#   observe({
-#     if (length(storedData$textprocess$vocab) > 0) {
-#       vocabLength = length(storedData$textprocess$vocab)
-#       newMax = as.integer(vocabLength + 0.1*vocabLength)
-#
-#       updateSliderInput(session, "prPlotRange", "Range:",
-#         min = 1, max = newMax, value = c(1, newMax/2))
-#     }
-#   })
-#
-#   observeEvent(input$prRun, ({
-#     if (is.null(storedData$textprocess)) {
-#       return(NULL)
-#     }
-#
-#     plotRange <- as.integer(input$prPlotRange)
-#
-#     output$prPlotOutput <- renderPlot(
-#       isolate(
-#         plotRemoved(storedData$textprocess$documents,
-#           lower.thresh = seq(from = plotRange[[1]],
-#             to = plotRange[[2]],
-#             by = 1)
-#         )
-#       )
-#     )
-#   }))
+  #   observe({
+  #     if (length(storedData$textprocess$vocab) > 0) {
+  #       vocabLength = length(storedData$textprocess$vocab)
+  #       newMax = as.integer(vocabLength + 0.1*vocabLength)
+  #
+  #       updateSliderInput(session, "prPlotRange", "Range:",
+  #         min = 1, max = newMax, value = c(1, newMax/2))
+  #     }
+  #   })
+  #
+  observeEvent(input$prRun, ({
+    if (is.null(storedData$textprocess)) {
+      return(NULL)
+    }
+
+    plotRange <- as.integer(input$prPlotRange)
+
+    output$prPlotOutput <- renderPlot(
+      isolate(
+        plotRemoved(storedData$textprocess$documents,
+          lower.thresh = seq(from = plotRange[[1]],
+            to = plotRange[[2]],
+            by = 1)
+        )
+      )
+    )
+  }))
 
   ##### Prep Documents #####
   # calculates on the output from text processor
@@ -267,13 +326,13 @@ shinyServer(function(input, output, session) {
   })
 
   observeEvent(input$pdClearout, ({
-    shinyjs::text("pdTextResult", "")
+    shinyjs::html("pdTextResult", "")
   }))
 
   observeEvent(input$pdPrepdocs, ({
 
     if (is.null(storedData$textprocess)) {
-      shinyjs::text("pdTextResult", "You must successfully run textProcessor!")
+      shinyjs::html("pdTextResult", "You must successfully run textProcessor!")
       return(NULL)
     }
 
@@ -284,7 +343,7 @@ shinyServer(function(input, output, session) {
 
     tpres <- storedData$textprocess
 
-    shinyjs::text("pdTextResult", "Running Prep Documents...")
+    shinyjs::html("pdTextResult", "Running Prep Documents...")
     withProgress( message = "Running prepDocuments, please wait...", {
       setProgress(0.5)
 
@@ -318,15 +377,15 @@ shinyServer(function(input, output, session) {
           setProgress(1)
         })
     })
-    shinyjs::text("pdTextResult", pdOutputRaw)
+    shinyjs::html("pdTextResult", pdOutputRaw)
   }))
 
   ##### STM #####
   onclick("toggleAdvStm", toggle(id = "advStmOptions", anim = TRUE))
 
-  observeEvent(input$stmClearout, ({
-    shinyjs::text("stmTextResult", "")
-  }))
+  observe({
+    toggleState("stmTitle-nextStep", !is.null(storedData$stmresult))
+  })
 
   observe({
     if(!is.null(storedData$textprocess)) {
@@ -344,14 +403,14 @@ shinyServer(function(input, output, session) {
 
     pdres <- storedData$prepdocs
     if(is.null(pdres)) {
-      shinyjs::text("stmTextResult", "You must successfully run Prep Documents!")
+      shinyjs::html("stmTextResult", "You must successfully run Prep Documents!")
       return(NULL)
     }
 
     stmArgs <- list()
 
     if(is.null(input$stmK)) {
-      shinyjs::text("stmTextResult", "K cannot be left blank!")
+      shinyjs::html("stmTextResult", "K cannot be left blank!")
       return(NULL)
     }
 
@@ -411,13 +470,13 @@ shinyServer(function(input, output, session) {
           setProgress(1)
         })
     })
-    shinyjs::text("stmTextResult", stmOutputRaw)
+    shinyjs::html("stmTextResult", stmOutputRaw)
   }))
 
   observeEvent(input$exportStm, ({
     stmObj <- storedData$stmresult
     if (is.null(stmObj)) {
-      shinyjs::text("stmTextResult", "You must successfully run STM before saving!")
+      shinyjs::html("stmTextResult", "You must successfully run STM before saving!")
       return(NULL)
     }
 
@@ -428,14 +487,14 @@ shinyServer(function(input, output, session) {
   onclick("toggleAdvEstEff", toggle(id = "advEstEffOptions", anim = TRUE))
 
   observeEvent(input$estEffClearout, ({
-    shinyjs::text("estEffTextResult", "")
+    shinyjs::html("estEffTextResult", "")
   }))
 
   observeEvent(input$estEffRun, ({
     stmObj <- storedData$stmresult
 
     if (is.null(stmObj)) {
-      shinyjs::text("estEffTextResult",
+      shinyjs::html("estEffTextResult",
         "You must successfully run STM before running estimateEffect!")
       return(NULL)
     }
@@ -452,7 +511,7 @@ shinyServer(function(input, output, session) {
     if (estEffString != "") {
       try(estEffArgs <- c(estEffArgs, formula=formula(estEffString)))
     } else {
-      shinyjs::text("estEffTextResult",
+      shinyjs::html("estEffTextResult",
         "You must enter a formula to run estimateEffect!")
       return(NULL)
     }
@@ -492,14 +551,14 @@ shinyServer(function(input, output, session) {
           setProgress(1)
         })
     })
-    shinyjs::text("estEffTextResult", "Ran estimateEffect!")
+    shinyjs::html("estEffTextResult", "Ran estimateEffect!")
   }))
 
   observeEvent(input$estEffPlot, ({
     estEff <- storedData$esteffect
 
     if (is.null(estEff)) {
-      shinyjs::text("estEffTextResult",
+      shinyjs::html("estEffPlotTextResult",
         "You must successfully run estimateEffect before plotting!")
       return(NULL)
     }
@@ -516,15 +575,15 @@ shinyServer(function(input, output, session) {
       isolate(
         plot.estimateEffect(x=estEff,
           covariate=input$estEffPlotCov,
-          method=input$estEffPlotMethod,
           topics=tops,
+          method=input$estEffPlotMethod,
           cov.value1=covVar1,
           cov.value2=covVar2,
           moderator=input$estEffMod,
           moderator.value=input$estEffModValue,
           linecol=input$estEffLineCol,
           npoints=input$estEffNPoints
-          )
+        )
       )
     })
   }))
@@ -535,20 +594,20 @@ shinyServer(function(input, output, session) {
   #   custom.labels, topic.names
 
   # change default for n automatically
-#   observe({
-#     plotType <- input$plotStmType
-#
-#     if (plotType == "labels") {
-#       updateNumericInput(session, 'plotStmN', value = 20 )
-#     } else if (plotType == "perspectives") {
-#       updateNumericInput(session, 'plotStmN', value = 25 )
-#     } else {
-#       updateNumericInput(session, 'plotStmN', value = 3 )
-#     }
-#   })
+  #   observe({
+  #     plotType <- input$plotStmType
+  #
+  #     if (plotType == "labels") {
+  #       updateNumericInput(session, 'plotStmN', value = 20 )
+  #     } else if (plotType == "perspectives") {
+  #       updateNumericInput(session, 'plotStmN', value = 25 )
+  #     } else {
+  #       updateNumericInput(session, 'plotStmN', value = 3 )
+  #     }
+  #   })
 
   observeEvent(input$summaryPlotClearout, ({
-    shinyjs::text("summaryPlotTextResult", "")
+    shinyjs::html("summaryPlotTextResult", "")
     output$summaryPlot <- renderPlot({ invisible(NULL) })
   }))
 
@@ -556,7 +615,7 @@ shinyServer(function(input, output, session) {
     stmObj <- storedData$stmresult
 
     if (is.null(stmObj)) {
-      shinyjs::text("summaryPlotTextResult",
+      shinyjs::html("summaryPlotTextResult",
         "You must successfully run STM before plotting!")
       return(NULL)
     }
@@ -580,11 +639,11 @@ shinyServer(function(input, output, session) {
     })
   }))
 
-    observeEvent(input$labelPlotCmd, ({
+  observeEvent(input$labelPlotCmd, ({
     stmObj <- storedData$stmresult
 
     if (is.null(stmObj)) {
-      shinyjs::text("labelPlotTextResult",
+      shinyjs::html("labelPlotTextResult",
         "You must successfully run STM before plotting!")
       return(NULL)
     }
@@ -608,11 +667,11 @@ shinyServer(function(input, output, session) {
     })
   }))
 
-    observeEvent(input$perspPlotCmd, ({
+  observeEvent(input$perspPlotCmd, ({
     stmObj <- storedData$stmresult
 
     if (is.null(stmObj)) {
-      shinyjs::text("perspPlotTextResult",
+      shinyjs::html("perspPlotTextResult",
         "You must successfully run STM before plotting!")
       return(NULL)
     }
@@ -636,11 +695,11 @@ shinyServer(function(input, output, session) {
     })
   }))
 
-    observeEvent(input$histPlotCmd, ({
+  observeEvent(input$histPlotCmd, ({
     stmObj <- storedData$stmresult
 
     if (is.null(stmObj)) {
-      shinyjs::text("histPlotTextResult",
+      shinyjs::html("histPlotTextResult",
         "You must successfully run STM before plotting!")
       return(NULL)
     }
@@ -668,13 +727,14 @@ shinyServer(function(input, output, session) {
     stmObj <- storedData$stmresult
 
     if (is.null(stmObj)) {
-      output$labelTopicsOut <- renderPrint({ "You must successfully run STM before running Label Topics" })
+      output$labelTopicsTextResult <-
+        renderPrint({ "You must successfully run STM before running Label Topics" })
       return(NULL)
     }
 
     tops <- changeCsStringToDoubleVectorOrLeaveNull(input$labelTopicsTopics)
 
-    output$labelTopicsOut <- renderPrint({
+    output$labelTopicsTextResult <- renderPrint({
       isolate(
         labelTopics(stmObj,
           n=input$labelTopicsN,

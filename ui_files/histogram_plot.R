@@ -2,12 +2,10 @@ fluidRow(
   column(5,
     wellPanel(
       fluidRow(
-        column(6,
+        column(8,
           actionButton("histPlotCmd", "Generate Plot!")
         ),
-        column(6,
-          actionButton("histPlotClearout", "Clear Output")
-        )
+        helpWithModal("histPlotHelp", 4)
       ),
       tags$hr(),
       fluidRow(

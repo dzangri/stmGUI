@@ -2,8 +2,8 @@ fluidRow(
   column(5,
     wellPanel(
       fluidRow(
-        column(6, actionButton("prRun", "Run plotRemove")),
-        column(6, actionButton("prClearout", "Clear Output"))
+        column(8, actionButton("prRun", "Run plotRemove")),
+        helpWithModal("prHelp", 4)
       )
       #                   fluidRow(
       #                     column(6,

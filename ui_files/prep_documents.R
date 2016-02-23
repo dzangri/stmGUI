@@ -2,12 +2,10 @@ fluidRow(
   column(5,
     wellPanel(
       fluidRow(
-        column(6,
+        column(8,
           actionButton("pdPrepdocs", "Prep Documents")
         ),
-        column(6,
-          actionButton("pdClearout", "Clear Output")
-        )
+        helpWithModal("pdHelp", 4)
       ),
       hr(),
       a(id = "toggleAdvPrepDocs", "Show/hide advanced options"),

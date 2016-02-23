@@ -4,9 +4,10 @@
 #
 
 pkgs <- c("shiny", "shinyjs", "markdown", "stm", "shinyBS")
-source("data_utils.R")
-
 load.packages(pkgs)
+
+source("data_utils.R")
+source("ui_utils.R")
 
 shinyUI(tagList(
   shinyjs::useShinyjs(),
@@ -19,27 +20,23 @@ shinyUI(tagList(
     tabPanel("Processing",
       fluidPage(
         fluidRow(
-          column(8, titlePanel("Step 2: Process and Prep Documents")),
-          column(4,
-            div(style = "text-align : right; padding-top : 20px;",
-              actionButton(
-                "moveFromProcToStm",
-                "Proceed to Step 3: Generating STM Model"
-              )
-            )
+          titleWithNextStep(
+            "processingTitle",
+            "Step 2: Process & Prep Documents",
+            "Proceed to Step 3: Generating STM Model"
           )
         ),
         ##### Text Processor #####
         tabsetPanel(id = "processingPanel",
           tabPanel("textProcessor",
             fluidRow(
-              column(12, titlePanel("textProcessor"))
+              titleWithClearout("tpClearout", "textProcessor")
             ),
             source(file.path("ui_files", "text_processor.R"),
               local = TRUE)$value,
             ##### Plot Removed #####
             fluidRow(
-              column(12, titlePanel("plotRemoved"))
+              titleWithClearout("prClearout", "plotRemoved")
             ),
             source(file.path("ui_files", "plot_removed.R"),
               local = TRUE)$value
@@ -47,7 +44,7 @@ shinyUI(tagList(
           ##### Prep Documents #####
           tabPanel("prepDocuments",
             fluidRow(
-              column(12, titlePanel("prepDocuments"))
+              titleWithClearout("pdClearout", "prepDocuments")
             ),
             source(file.path("ui_files", "prep_documents.R"),
               local = TRUE)$value
@@ -59,19 +56,22 @@ shinyUI(tagList(
     tabPanel("Model",
       fluidPage(
         fluidRow(
-          column(12, titlePanel("Step 3: Run STM model"))
+          titleWithNextStep(
+            "stmTitle",
+            "Step 3: Run STM model",
+            "Proceed to Plotting"
+          )
         ),
         tabsetPanel(id = "modelingPanel",
           tabPanel("stm",
             fluidRow(
-              column(12, titlePanel("stm"))
-              #    column(2, actionButton("exportStm", "Export STM data"))
+              titleWithClearout("stmClearout", "stm")
             ),
             source(file.path("ui_files", "stm_model.R"), local = TRUE)$value
           ),
           tabPanel("estimateEffect",
             fluidRow(
-              column(12, titlePanel("estimateEffect"))
+              titleWithClearout("estEffClearout", "estimateEffect")
             ),
             source(file.path("ui_files", "est_effect.R"),
               local = TRUE)$value
@@ -89,7 +89,7 @@ shinyUI(tagList(
           tabsetPanel(id = "plotPanel",
             tabPanel("summary",
               fluidRow(
-                column(12, titlePanel("Summary Plot"))
+                titleWithClearout("summaryPlotClearout", "Summary Plot")
               ),
               source(
                 file.path("ui_files", "summary_plot.R"),
@@ -97,7 +97,7 @@ shinyUI(tagList(
             ),
             tabPanel("labels",
               fluidRow(
-                column(12, titlePanel("Labels Plot"))
+                titleWithClearout("labelsPlotClearout", "Labels Plot")
               ),
               source(
                 file.path("ui_files", "labels_plot.R"),
@@ -105,7 +105,7 @@ shinyUI(tagList(
             ),
             tabPanel("perspectives",
               fluidRow(
-                column(12, titlePanel("Perspectives Plot"))
+                titleWithClearout("perspPlotClearout", "Perspectives Plot")
               ),
               source(
                 file.path("ui_files", "perspectives_plot.R"),
@@ -113,7 +113,7 @@ shinyUI(tagList(
             ),
             tabPanel("hist",
               fluidRow(
-                column(12, titlePanel("Histogram Plot"))
+                titleWithClearout("histPlotClearout", "Histogram Plot")
               ),
               source(
                 file.path("ui_files", "histogram_plot.R"),
@@ -125,7 +125,7 @@ shinyUI(tagList(
       tabPanel("plot.estimateEffect",
         fluidPage(
           fluidRow(
-            column(12, titlePanel("Plot the output from estimateEffect"))
+            titleWithClearout("estEffPlotClearout", "Estimate Effect Plot")
           ),
           source(
             file.path("ui_files", "estimate_eff_plot.R"),
@@ -133,12 +133,16 @@ shinyUI(tagList(
         )
       ),
       tabPanel("labelTopics",
-        titlePanel("Generate words describing each topic from an STM object"),
         fluidPage(
           fluidRow(
-            column(9,
-              h3("labelTopics")
+            column(12,
+              titlePanel(
+                "Generate words describing each topic from an STM object"
+              )
             )
+          ),
+          fluidRow(
+            titleWithClearout("labelTopicsClearout", "labelTopics")
           ),
           source(
             file.path("ui_files", "label_topics.R"),

@@ -2,8 +2,8 @@ fluidRow(
   column(5,
     wellPanel(
       fluidRow(
-        column(6, actionButton("stmRun", "Run STM")),
-        column(6, actionButton('stmClearout', "Clear STM Output"))
+        column(8, actionButton("stmRun", "Run STM")),
+        helpWithModal("stmHelp", 4)
       ),
       fluidRow(
         tags$hr(),
