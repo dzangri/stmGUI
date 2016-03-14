@@ -1,8 +1,8 @@
 changeCsStringToDoubleVectorOrLeaveNull <- function(cs.string) {
   string.to.vector <- cs.string
   if (nchar(string.to.vector) > 0) {
-    string.to.vector <- c(as.double(strsplit(string.to.vector, ",")[[1]]))
-    return(string.to.vector)
+    string.as.double <- c(as.double(strsplit(string.to.vector, ",")[[1]]))
+    return(string.as.double)
   }
   else {
     return(NULL)

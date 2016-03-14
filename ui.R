@@ -3,15 +3,22 @@
 # ui for running stm in Shiny
 #
 
-pkgs <- c("shiny", "shinyjs", "markdown", "stm", "shinyBS")
-load.packages(pkgs)
-
 source("data_utils.R")
 source("ui_utils.R")
 
+pkgs <- c("shiny", "shinyjs", "markdown", "stm", "shinyBS", "shinythemes")
+load.packages(pkgs)
+
+
+
 shinyUI(tagList(
+  includeCSS("www/flatly.css"),
+  includeCSS("www/style.css"),
   shinyjs::useShinyjs(),
-  navbarPage("stm", id = "navBar", collapsible = TRUE,
+  navbarPage("stm",
+    id = "navBar",
+    collapsible = TRUE,
+    theme = shinytheme("cosmo"),
     #### DataInput ####
     tabPanel("Data",
       source(file.path("ui_files", "data_input.R"), local = TRUE)$value

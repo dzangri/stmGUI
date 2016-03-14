@@ -42,7 +42,7 @@ helpWithModal <- function(id, helpSize) {
     ),
     bsTooltip(ns("help"), "Help", "top", options = list(container = "body")),
     bsModal(ns("modal"), "Help", ns("help"), size = "large",
-      verbatimTextOutput(ns("helpText"))
+      textOutput(ns("helpText"))
     )
   )
 }
