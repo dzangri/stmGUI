@@ -2,10 +2,10 @@
 #
 # Server-side logic for handling stm workflows
 
+source("data_utils.R")
+
 pkgs <- c("shiny", "stm", "shinyjs")
 load.packages(pkgs)
-
-source("data_utils.R")
 
 options(shiny.maxRequestSize=100*1024^2)
 
@@ -36,6 +36,7 @@ shinyServer(function(input, output, session) {
   storedData$textprocess <- NULL
   storedData$prepdocs <- NULL
   storedData$stmresult <- NULL
+  storedData$stmformula <- NULL
   storedData$esteffect <- NULL
 
   dataInputTitleObserver <- callModule(observeNextStep, "dataInputTitle")
@@ -81,21 +82,27 @@ shinyServer(function(input, output, session) {
   }))
   observeEvent(summaryPlotClearoutObserver(), ({
     shinyjs::html("summaryPlotTextResult", "")
+    shinyjs::html("summaryPlot", "")
   }))
   observeEvent(labelsPlotClearoutObserver(), ({
     shinyjs::html("labelPlotTextResult", "")
+    shinyjs::html("labelPlot", "")
   }))
   observeEvent(perspPlotClearoutObserver(), ({
     shinyjs::html("perspPlotTextResult", "")
+    shinyjs::html("perspPlot", "")
   }))
   observeEvent(histPlotClearoutObserver(), ({
     shinyjs::html("histPlotTextResult", "")
+    shinyjs::html("histPlot", "")
   }))
   observeEvent(estEffPlotClearoutObserver(), ({
     shinyjs::html("estEffPlotTextResult", "")
+    shinyjs::html("estEffPlot", "")
   }))
   observeEvent(labelTopicsClearoutObserver(), ({
     shinyjs::html("labelTopicsTextResult", "")
+    shinyjs::html("labelTopicsPlot", "")
   }))
 
   ##### Data Upload #####
@@ -295,12 +302,22 @@ shinyServer(function(input, output, session) {
 
     plotRange <- as.integer(input$prPlotRange)
 
+    min.thresh.element <- plotRange[[1]]
+    max.thresh.element <- plotRange[[2]]
+    jump <- 1
+    num.in.lower.thresh <- (max.thresh.element - min.thresh.element) / jump
+
+    while(num.in.lower.thresh > 2000) {
+      jump <- jump * 2
+      num.in.lower.thresh <- (max.thresh.element - min.thresh.element) / jump
+    }
+
     output$prPlotOutput <- renderPlot(
       isolate(
         plotRemoved(storedData$textprocess$documents,
-          lower.thresh = seq(from = plotRange[[1]],
-            to = plotRange[[2]],
-            by = 1)
+          lower.thresh = seq(from = min.thresh.element,
+            to = max.thresh.element,
+            by = jump)
         )
       )
     )
@@ -311,6 +328,10 @@ shinyServer(function(input, output, session) {
   # or calculates on the file uploaded by the user
   # **TODO**: expand functionality for case of user-input file
   onclick("toggleAdvPrepDocs", toggle(id = "advPrepDocsOptions", anim = TRUE))
+
+  observe({
+    toggleState("pdPrepdocs", !is.null(storedData$textprocess))
+  })
 
   # Change Upper Thresh
   observe({
@@ -382,6 +403,10 @@ shinyServer(function(input, output, session) {
 
   ##### STM #####
   onclick("toggleAdvStm", toggle(id = "advStmOptions", anim = TRUE))
+
+  observe({
+    toggleState("stmRun", !is.null(storedData$prepdocs))
+  })
 
   observe({
     toggleState("stmTitle-nextStep", !is.null(storedData$stmresult))
@@ -469,6 +494,7 @@ shinyServer(function(input, output, session) {
         }, finally={
           setProgress(1)
         })
+      storedData$stmformula <- prevString
     })
     shinyjs::html("stmTextResult", stmOutputRaw)
   }))
@@ -485,6 +511,21 @@ shinyServer(function(input, output, session) {
 
   ##### Estimate Effect #####
   onclick("toggleAdvEstEff", toggle(id = "advEstEffOptions", anim = TRUE))
+
+  observe({
+    toggleState("estEffRun", !is.null(storedData$stmresult))
+  })
+
+  observe({
+    stmFormula <- storedData$stmformula
+    if (!is.null(storedData$stmresult) && !is.null(stmFormula)) {
+      updateTextInput(
+        session,
+        "estEffFormula",
+        "formula\n(include leading ~)",
+        stmFormula)
+    }
+  })
 
   observeEvent(input$estEffClearout, ({
     shinyjs::html("estEffTextResult", "")
@@ -554,6 +595,7 @@ shinyServer(function(input, output, session) {
     shinyjs::html("estEffTextResult", "Ran estimateEffect!")
   }))
 
+  ##### Plot Estimate Effect #####
   observeEvent(input$estEffPlot, ({
     estEff <- storedData$esteffect
 
