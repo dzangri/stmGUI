@@ -23,26 +23,6 @@ observeClearout <- function(input, output, session) {
   return(reactClearout)
 }
 
-# observeDownload <- function(input, output, session) {
-#   reactDownload <- reactive({
-#     input$downloadPdf
-#   })
-#   return(reactDownload)
-# }
-#
-# reactDownload <- function(input, output, session) {
-#   handler <- downloadHandler(
-#     filename = function() {
-#       paste('distPlot', input$id, '.pdf', sep='')
-#     },
-#     content = function(FILE=NULL) {
-#       pdf(file=FILE)
-#       print(makedistPlot())
-#       dev.off()
-#     }
-#   )
-# }
-
 shinyServer(function(input, output, session) {
 
   #### TEST CODE HERE ####
