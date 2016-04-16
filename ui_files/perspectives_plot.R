@@ -51,6 +51,11 @@ fluidRow(
   ),
   column(7,
     verbatimTextOutput("perspPlotTextResult"),
-    plotOutput("perspPlot")
+    plotOutput("perspPlot"),
+    column(12,
+      div(style = "text-align : right; padding-top : 20px;",
+        downloadButton("perspectivesPlotDownload", "Download Plot as PDF")
+      )
+    )
   )
 )

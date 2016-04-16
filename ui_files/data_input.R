@@ -39,7 +39,7 @@ fluidPage(
     ),
   column(7,
     verbatimTextOutput("dataInputTextResult"),
-    DT::dataTableOutput('data', "50%")
+    DT::dataTableOutput('data', "100%")
   )
   )
 )

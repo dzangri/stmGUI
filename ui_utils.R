@@ -30,6 +30,21 @@ titleWithClearout <- function(id, title) {
   )
 }
 
+downloadPlotAsPdf <- function(id) {
+  ns <- NS(id)
+
+  tagList(
+    column(12,
+      div(style = "text-align : right; padding-top : 20px;",
+        downloadButton(
+          ns("downloadPdf"),
+          "Download Plot As PDF"
+        )
+      )
+    )
+  )
+}
+
 helpWithModal <- function(id, helpSize) {
   ns <- NS(id)
 
