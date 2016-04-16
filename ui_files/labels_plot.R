@@ -51,6 +51,11 @@ fluidRow(
   ),
   column(7,
     verbatimTextOutput("labelPlotTextResult"),
-    plotOutput("labelPlot")
+    plotOutput("labelPlot"),
+    column(12,
+      div(style = "text-align : right; padding-top : 20px;",
+        downloadButton("labelsPlotDownload", "Download Plot as PDF")
+      )
+    )
   )
 )

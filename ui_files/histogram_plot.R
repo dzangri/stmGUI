@@ -51,6 +51,11 @@ fluidRow(
   ),
   column(7,
     verbatimTextOutput("histPlotTextResult"),
-    plotOutput("histPlot")
+    plotOutput("histPlot"),
+    column(12,
+      div(style = "text-align : right; padding-top : 20px;",
+        downloadButton("histPlotDownload", "Download Plot as PDF")
+      )
+    )
   )
 )

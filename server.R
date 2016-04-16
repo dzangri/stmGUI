@@ -39,6 +39,11 @@ shinyServer(function(input, output, session) {
   storedData$stmformula <- NULL
   storedData$esteffect <- NULL
 
+  storedData$summaryPlotArgs <- NULL
+  storedData$labelsPlotArgs <- NULL
+  storedData$perspectivesPlotArgs <- NULL
+  storedData$histPlotArgs <- NULL
+
   dataInputTitleObserver <- callModule(observeNextStep, "dataInputTitle")
   processingTitleObserver <- callModule(observeNextStep, "processingTitle")
   stmTitleObserver <- callModule(observeNextStep, "stmTitle")
@@ -267,7 +272,9 @@ shinyServer(function(input, output, session) {
           vocabLength = length(storedData$textprocess$vocab)
           newMax = as.integer(vocabLength + 0.1*vocabLength)
 
-          updateSliderInput(session, "prPlotRange", "Range:",
+          updateSliderInput(session,
+            "prPlotRange",
+            "Lower threshold values to test word and document removal from the sample:",
             min = 1, max = newMax, value = c(1, newMax/2))
         } else {
           shinyjs::html("tpTextResult", errorForUi(
@@ -285,16 +292,6 @@ shinyServer(function(input, output, session) {
   }))
 
   ##### Plot Removed #####
-  #   observe({
-  #     if (length(storedData$textprocess$vocab) > 0) {
-  #       vocabLength = length(storedData$textprocess$vocab)
-  #       newMax = as.integer(vocabLength + 0.1*vocabLength)
-  #
-  #       updateSliderInput(session, "prPlotRange", "Range:",
-  #         min = 1, max = newMax, value = c(1, newMax/2))
-  #     }
-  #   })
-  #
   observeEvent(input$prRun, ({
     if (is.null(storedData$textprocess)) {
       return(NULL)
@@ -608,6 +605,7 @@ shinyServer(function(input, output, session) {
     tops <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffPlotTopics)
     covVar1 <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffCovVar1)
     covVar2 <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffCovVar2)
+    lineColumns <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffLineCol)
 
     if (is.null(tops)) {
       tops <- estEff$topics
@@ -635,23 +633,26 @@ shinyServer(function(input, output, session) {
   #   family, width, covarlevels, plabels, text.cex
   #   custom.labels, topic.names
 
-  # change default for n automatically
-  #   observe({
-  #     plotType <- input$plotStmType
-  #
-  #     if (plotType == "labels") {
-  #       updateNumericInput(session, 'plotStmN', value = 20 )
-  #     } else if (plotType == "perspectives") {
-  #       updateNumericInput(session, 'plotStmN', value = 25 )
-  #     } else {
-  #       updateNumericInput(session, 'plotStmN', value = 3 )
-  #     }
-  #   })
-
   observeEvent(input$summaryPlotClearout, ({
     shinyjs::html("summaryPlotTextResult", "")
     output$summaryPlot <- renderPlot({ invisible(NULL) })
   }))
+
+  observe({
+    toggleState("summaryPlotDownload", !is.null(storedData$summaryPlotArgs))
+  })
+
+  observe({
+    toggleState("labelsPlotDownload", !is.null(storedData$labelsPlotArgs))
+  })
+
+  observe({
+    toggleState("perspectivesPlotDownload", !is.null(storedData$perspectivesPlotArgs))
+  })
+
+  observe({
+    toggleState("histPlotDownload", !is.null(storedData$histPlotArgs))
+  })
 
   observeEvent(input$summaryPlotCmd, ({
     stmObj <- storedData$stmresult
@@ -666,20 +667,34 @@ shinyServer(function(input, output, session) {
     plotXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$summaryPlotXLim)
     plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$summaryPlotYLim)
 
+    storedData$summaryPlotArgs <-
+      list(x=stmObj,
+        type="summary",
+        n=input$summaryPlotN,
+        topics=tops,
+        labeltype=input$summaryPlotLabelType,
+        frexw=input$summaryPlotFrexw,
+        main=input$summaryPlotMain,
+        xlim=plotXLim,
+        ylim=plotYLim)
+
     output$summaryPlot <- renderPlot({
       isolate(
-        plot.STM(stmObj,
-          type="summary",
-          n=input$summaryPlotN,
-          topics=tops,
-          labeltype=input$summaryPlotLabelType,
-          frexw=input$summaryPlotFrexw,
-          main=input$summaryPlotMain,
-          xlim=plotXLim,
-          ylim=plotYLim)
+        do.call(plot.STM, storedData$summaryPlotArgs)
       )
     })
   }))
+
+  output$summaryPlotDownload <- downloadHandler(
+    filename = function() {
+      paste('stmSummaryPlot', Sys.Date(), '.pdf', sep='')
+    },
+    content = function(file) {
+      pdf(file)
+      do.call(plot.STM, storedData$summaryPlotArgs)
+      dev.off()
+    }
+  )
 
   observeEvent(input$labelPlotCmd, ({
     stmObj <- storedData$stmresult
@@ -694,20 +709,34 @@ shinyServer(function(input, output, session) {
     plotXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$labelPlotXLim)
     plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$labelPlotYLim)
 
+    storedData$labelsPlotArgs <-
+      list(x=stmObj,
+        type="labels",
+        n=input$labelPlotN,
+        topics=tops,
+        labeltype=input$labelPlotLabelType,
+        frexw=input$labelPlotFrexw,
+        main=input$labelPlotMain,
+        xlim=plotXLim,
+        ylim=plotYLim)
+
     output$labelPlot <- renderPlot({
       isolate(
-        plot.STM(stmObj,
-          type="labels",
-          n=input$labelPlotN,
-          topics=tops,
-          labeltype=input$labelPlotLabelType,
-          frexw=input$labelPlotFrexw,
-          main=input$labelPlotMain,
-          xlim=plotXLim,
-          ylim=plotYLim)
+        do.call(plot.STM, storedData$labelsPlotArgs)
       )
     })
   }))
+
+  output$labelsPlotDownload <- downloadHandler(
+    filename = function() {
+      paste('stmLabelsPlot', Sys.Date(), '.pdf', sep='')
+    },
+    content = function(file) {
+      pdf(file)
+      do.call(plot.STM, storedData$labelsPlotArgs)
+      dev.off()
+    }
+  )
 
   observeEvent(input$perspPlotCmd, ({
     stmObj <- storedData$stmresult
@@ -722,9 +751,8 @@ shinyServer(function(input, output, session) {
     plotXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$perspPlotXLim)
     plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$perspPlotYLim)
 
-    output$perspPlot <- renderPlot({
-      isolate(
-        plot.STM(stmObj,
+    storedData$perspectivesPlotArgs <-
+      list(x=stmObj,
           type="perspectives",
           n=input$perspPlotN,
           topics=tops,
@@ -733,9 +761,24 @@ shinyServer(function(input, output, session) {
           main=input$perspPlotMain,
           xlim=plotXLim,
           ylim=plotYLim)
+
+    output$perspPlot <- renderPlot({
+      isolate(
+        do.call(plot.STM, storedData$perspectivesPlotArgs)
       )
     })
   }))
+
+  output$perspectivesPlotDownload <- downloadHandler(
+    filename = function() {
+      paste('stmPerspectivesPlot', Sys.Date(), '.pdf', sep='')
+    },
+    content = function(file) {
+      pdf(file)
+      do.call(plot.STM, storedData$perspectivesPlotArgs)
+      dev.off()
+    }
+  )
 
   observeEvent(input$histPlotCmd, ({
     stmObj <- storedData$stmresult
@@ -750,20 +793,34 @@ shinyServer(function(input, output, session) {
     plotXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$histPlotXLim)
     plotYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$histPlotYLim)
 
+    storedData$histPlotArgs <-
+      list(x=stmObj,
+        type="hist",
+        n=input$histPlotN,
+        topics=tops,
+        labeltype=input$histPlotLabelType,
+        frexw=input$histPlotFrexw,
+        main=input$histPlotMain,
+        xlim=plotXLim,
+        ylim=plotYLim)
+
     output$histPlot <- renderPlot({
       isolate(
-        plot.STM(stmObj,
-          type="hist",
-          n=input$histPlotN,
-          topics=tops,
-          labeltype=input$histPlotLabelType,
-          frexw=input$histPlotFrexw,
-          main=input$histPlotMain,
-          xlim=plotXLim,
-          ylim=plotYLim)
+        do.call(plot.STM, storedData$histPlotArgs)
       )
     })
   }))
+
+  output$histPlotDownload <- downloadHandler(
+    filename = function() {
+      paste('stmHistPlot', Sys.Date(), '.pdf', sep='')
+    },
+    content = function(file) {
+      pdf(file)
+      do.call(plot.STM, storedData$histPlotArgs)
+      dev.off()
+    }
+  )
 
   observeEvent(input$labelTopics, ({
     stmObj <- storedData$stmresult

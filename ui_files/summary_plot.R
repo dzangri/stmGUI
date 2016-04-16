@@ -51,6 +51,11 @@ fluidRow(
   ),
   column(7,
     verbatimTextOutput("summaryPlotTextResult"),
-    plotOutput("summaryPlot")
+    plotOutput("summaryPlot"),
+    column(12,
+      div(style = "text-align : right; padding-top : 20px;",
+        downloadButton("summaryPlotDownload", "Download Plot as PDF")
+      )
+    )
   )
 )

@@ -9,8 +9,6 @@ source("ui_utils.R")
 pkgs <- c("shiny", "shinyjs", "markdown", "stm", "shinyBS", "shinythemes")
 load.packages(pkgs)
 
-
-
 shinyUI(tagList(
   includeCSS("www/flatly.css"),
   includeCSS("www/style.css"),
@@ -99,8 +97,7 @@ shinyUI(tagList(
                 titleWithClearout("summaryPlotClearout", "Summary Plot")
               ),
               source(
-                file.path("ui_files", "summary_plot.R"),
-                local = TRUE)$value
+                file.path("ui_files", "summary_plot.R"), local = TRUE)$value
             ),
             tabPanel("labels",
               fluidRow(
