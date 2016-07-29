@@ -10,8 +10,8 @@ pkgs <- c("shiny", "shinyjs", "markdown", "stm", "shinyBS", "shinythemes")
 load.packages(pkgs)
 
 shinyUI(tagList(
-  includeCSS("www/flatly.css"),
-  includeCSS("www/style.css"),
+   includeCSS("www/flatly.css"),
+   includeCSS("www/style.css"),
   shinyjs::useShinyjs(),
   navbarPage("stm",
     id = "navBar",

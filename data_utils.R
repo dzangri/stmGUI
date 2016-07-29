@@ -9,6 +9,25 @@ changeCsStringToDoubleVectorOrLeaveNull <- function(cs.string) {
   }
 }
 
+changeCsStringToVectorOrLeaveNull <- function(cs.string) {
+  string.to.vector <- cs.string
+  if (nchar(string.to.vector) > 0) {
+    string.as.string.vec <- c(strsplit(string.to.vector, ",")[[1]])
+    return(string.as.string.vec)
+  }
+  else {
+    return(NULL)
+  }
+}
+
+changeEmptyStringToNull <- function(possiblyEmptyString) {
+  if (possiblyEmptyString == "") {
+    return(NULL)
+  } else {
+    return(possiblyEmptyString)
+  }
+}
+
 changeStringToLogical <- function(logicalString) {
   if (logicalString) {
     return(T)
