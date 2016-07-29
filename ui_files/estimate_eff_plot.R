@@ -3,7 +3,7 @@ fluidRow(
     wellPanel(
       fluidRow(
         column(8,
-          actionButton("estEffPlot", "Generate Plot!")
+          actionButton("doEstEffPlot", "Generate Plot!")
         ),
         helpWithModal("estEffPlotHelp", 4)
       ),
@@ -30,10 +30,10 @@ fluidRow(
       ),
       fluidRow(
         column(6,
-          textInput("estEffCovVar1", label = "cov.value1, comma-separated")
+          textInput("estEffCovVar1", label = "cov.value1")
         ),
         column(6,
-          textInput("estEffCovVar2", label = "cov.value2, comma-separated")
+          textInput("estEffCovVar2", label = "cov.value2")
         )
       ),
       fluidRow(
@@ -51,11 +51,24 @@ fluidRow(
         column(6,
           numericInput("estEffNPoints", label = "npoints", value = 100)
         )
+      ),
+      fluidRow(
+        column(6,
+          textInput("estEffXLim", label = "xlim, comma separated (e.g -.1,.1)")
+        ),
+        column(6,
+          textInput("estEffYLim", label = "ylim, comma separated (e.g -10,10)")
+        )
       )
     )
   ),
   column(7,
     verbatimTextOutput("estEffPlotTextResult"),
-    plotOutput("estEffPlot")
+    plotOutput("estEffPlot"),
+    column(12,
+      div(style = "text-align : right; padding-top : 20px;",
+        downloadButton("estEffPlotDownload", "Download Plot as PDF")
+      )
+    )
   )
 )

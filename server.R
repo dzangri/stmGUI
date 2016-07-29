@@ -26,7 +26,7 @@ observeClearout <- function(input, output, session) {
 shinyServer(function(input, output, session) {
 
   #### TEST CODE HERE ####
-  #  load("stmResult.RData")
+  # load("stmResult.RData")
   ####
 
   # reactive object that stores intermediate results
@@ -43,6 +43,7 @@ shinyServer(function(input, output, session) {
   storedData$labelsPlotArgs <- NULL
   storedData$perspectivesPlotArgs <- NULL
   storedData$histPlotArgs <- NULL
+  storedData$estEffPlotArgs <- NULL
 
   dataInputTitleObserver <- callModule(observeNextStep, "dataInputTitle")
   processingTitleObserver <- callModule(observeNextStep, "processingTitle")
@@ -292,6 +293,10 @@ shinyServer(function(input, output, session) {
   }))
 
   ##### Plot Removed #####
+  observe({
+    toggleState("prRun", !is.null(storedData$textprocess))
+  })
+
   observeEvent(input$prRun, ({
     if (is.null(storedData$textprocess)) {
       return(NULL)
@@ -496,15 +501,15 @@ shinyServer(function(input, output, session) {
     shinyjs::html("stmTextResult", stmOutputRaw)
   }))
 
-  observeEvent(input$exportStm, ({
-    stmObj <- storedData$stmresult
-    if (is.null(stmObj)) {
-      shinyjs::html("stmTextResult", "You must successfully run STM before saving!")
-      return(NULL)
-    }
-
-    save(stmObj, file="stmResult.RData")
-  }))
+#   observeEvent(input$exportStm, ({
+#     stmObj <- storedData$stmresult
+#     if (is.null(storedData)) {
+#       shinyjs::html("stmTextResult", "You must successfully run STM before saving!")
+#       return(NULL)
+#     }
+#
+#     save(storedData, file="stmResult.RData")
+#   }))
 
   ##### Estimate Effect #####
   onclick("toggleAdvEstEff", toggle(id = "advEstEffOptions", anim = TRUE))
@@ -593,8 +598,9 @@ shinyServer(function(input, output, session) {
   }))
 
   ##### Plot Estimate Effect #####
-  observeEvent(input$estEffPlot, ({
+  observeEvent(input$doEstEffPlot, ({
     estEff <- storedData$esteffect
+    stmObj <- storedData$stmresult
 
     if (is.null(estEff)) {
       shinyjs::html("estEffPlotTextResult",
@@ -602,31 +608,72 @@ shinyServer(function(input, output, session) {
       return(NULL)
     }
 
-    tops <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffPlotTopics)
-    covVar1 <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffCovVar1)
-    covVar2 <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffCovVar2)
-    lineColumns <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffLineCol)
+    plotMethod <- input$estEffPlotMethod
 
+    tops <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffPlotTopics)
     if (is.null(tops)) {
       tops <- estEff$topics
     }
 
+    estEffXLim <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffXLim)
+    estEffYLim <- changeCsStringToDoubleVectorOrLeaveNull(input$estEffYLim)
+
+    storedData$estEffPlotArgs <-
+      list(x=estEff,
+          covariate=input$estEffPlotCov,
+          model=stmObj,
+          topics=tops,
+          method=plotMethod,
+          xlim=estEffXLim,
+          ylim=estEffYLim
+        )
+
+    if (plotMethod == "difference") {
+      covVar1 <- input$estEffCovVar1
+      covVar2 <- input$estEffCovVar2
+      try(storedData$estEffPlotArgs <- c(storedData$estEffPlotArgs,
+        cov.value1=covVar1,
+        cov.value2=covVar2))
+    }
+
+    estEffModerator <- changeEmptyStringToNull(input$estEffMod)
+    estEffModeratorVal <- changeEmptyStringToNull(input$estEffModValue)
+    if (!is.null(estEffModerator)) {
+      try(storedData$estEffPlotArgs <- c(storedData$estEffPlotArgs, moderator=estEffModerator))
+    }
+    if (!is.null(estEffModeratorVal)) {
+      try(storedData$estEffPlotArgs <-
+          c(storedData$estEffPlotArgs, moderator.value=estEffModeratorVal))
+    }
+
+    if (plotMethod == "continuous") {
+      npoints <- changeEmptyStringToNull(input$estEffNPoints)
+      lineCols <- changeCsStringToVectorOrLeaveNull(input$estEffLineCol)
+      if (!is.null(npoints)) {
+        try(storedData$estEffPlotArgs <- c(storedData$estEffPlotArgs, npoints=npoints))
+      }
+      if (!is.null(lineCols)) {
+        try(storedData$estEffPlotArgs <- c(storedData$estEffPlotArgs, linecol=lineCols))
+      }
+    }
+
     output$estEffPlot <- renderPlot({
       isolate(
-        plot.estimateEffect(x=estEff,
-          covariate=input$estEffPlotCov,
-          topics=tops,
-          method=input$estEffPlotMethod,
-          cov.value1=covVar1,
-          cov.value2=covVar2,
-          moderator=input$estEffMod,
-          moderator.value=input$estEffModValue,
-          linecol=input$estEffLineCol,
-          npoints=input$estEffNPoints
-        )
+        do.call(plot.estimateEffect, storedData$estEffPlotArgs)
       )
     })
   }))
+
+  output$estEffPlotDownload <- downloadHandler(
+    filename = function() {
+      paste('estEffPlot', Sys.Date(), '.pdf', sep='')
+    },
+    content = function(file) {
+      pdf(file)
+      do.call(plot.estimateEffect, storedData$estEffPlotArgs)
+      dev.off()
+    }
+  )
 
   ##### plot STM #####
   # currently leaving out as inputs until future input:
@@ -826,8 +873,8 @@ shinyServer(function(input, output, session) {
     stmObj <- storedData$stmresult
 
     if (is.null(stmObj)) {
-      output$labelTopicsTextResult <-
-        renderPrint({ "You must successfully run STM before running Label Topics" })
+      shinyjs::html("labelTopicsTextResult",
+        "You must successfully run STM before running Label Topics")
       return(NULL)
     }
 
