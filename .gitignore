@@ -5,3 +5,6 @@
 .RData
 .Rapp.history
 .Rhistory
+.Rproj.user
+*.Rproj
+.Rbuildignore
