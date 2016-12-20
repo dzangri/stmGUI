@@ -1,11 +1,11 @@
 Package: stmgui
 Type: Package
 Title: Shiny Application for Creating STM Models
-Version: 0.1.5
-Date: 2016-11-15
-Author: Dan Zangri
+Version: 0.1.6
+Date: 2016-12-15
+Author: Dan Zangri [aut, cre], Dustin Tingley [ctb], Brandon Stewart [ctb]
 Maintainer: Dan Zangri <dzangri@gmail.com>
-Description: Provides an application that acts as a GUI for the 'stm' text processing package.
+Description: Provides an application that acts as a GUI for the 'stm' text analysis package.
 Depends: stm, markdown, shinyjs, shinythemes, tm
 Imports: shiny, shinyBS
 LazyData: yes

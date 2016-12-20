@@ -1,4 +1,3 @@
-#' @import utils
 
 changeCsStringToDoubleVectorOrLeaveNull <- function(cs.string) {
     string.to.vector <- cs.string
